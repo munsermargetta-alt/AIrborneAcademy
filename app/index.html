@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AIrborne Academy · Herramientas</title>
+<meta name="description" content="Calculadoras de aviación de AIrborne Academy: triángulo de viento, tiempo y combustible, altitudes y TAS, viento cruzado, ascenso y descenso, gradientes, conversiones y esperas. Funciona sin internet.">
+<meta name="theme-color" content="#0b1630">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icono-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="bar">
+  <a class="back" href="#/" id="btnBack" hidden aria-label="Volver al inicio">‹</a>
+  <a class="brand" href="#/"><img src="../img/logo.png" alt="AIrborne Academy"></a>
+  <button class="install" id="btnInstall" hidden>Instalar</button>
+</header>
+
+<main id="vista" tabindex="-1"></main>
+
+<footer class="pie">
+  Herramienta de estudio. No sustituye al POH/AFM, a la planeación oficial ni a tu instructor.
+  · <a href="../index.html">airborneacademy.app</a>
+</footer>
+
+<!-- El motor de cálculo (solo matemáticas, con pruebas en pruebas_calc.js) -->
+<script src="calc.js"></script>
+<!-- Las pantallas -->
+<script src="app.js"></script>
+</body>
+</html>
