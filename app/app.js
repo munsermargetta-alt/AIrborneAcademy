@@ -28,6 +28,9 @@
     gradiente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 20L21 6"/><path d="M3 20h18"/><path d="M15 20a7 7 0 0 0-1-5"/></svg>',
     conv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg>',
     espera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="16" cy="12" r="1.5" fill="currentColor"/></svg>',
+    arco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="1.8" fill="currentColor"/><path d="M6 6a12 12 0 0 1 12 12"/><path d="M6 18L6 4M6 18L20 18"/></svg>',
+    pbn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.5 16.5L10.7 7.7M13.8 7.2l4 6"/></svg>',
+    plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
   };
 
   /* ---------- 1. LAS HERRAMIENTAS ---------- */
@@ -156,6 +159,38 @@
       },
     },
     {
+      id: 'arco', titulo: 'Arcos DME', resumen: 'Dónde virar para entrar al arco y para salir al radial final.',
+      intro: 'Un arco DME es volar alrededor de una estación VOR/DME a una distancia fija. Ya se usa menos (hoy casi todo es RNAV), pero sigue en cartas de México y en los exámenes. Calcula dónde empezar cada viraje, qué rumbos volar y cuánto dura el arco.',
+      campos: [
+        { id: 'dme', label: 'Distancia del arco', ayuda: 'La de la carta, por ejemplo "ARC 10 DME".', u: 'NM', v: 10 },
+        { id: 'radialEntrada', label: 'Radial por el que llegas al arco', ayuda: 'El radial que vuelas antes de entrar al arco.', u: '°', v: 90 },
+        { id: 'tramoEntrada', label: 'Sobre ese radial vas', tipo: 'seg', opciones: [['alejandose', 'Alejándote'], ['acercandose', 'Acercándote']], v: 'alejandose' },
+        { id: 'sentido', label: 'Recorres el arco en sentido', tipo: 'seg', opciones: [['horario', 'Horario (radiales suben)'], ['antihorario', 'Antihorario (bajan)']], v: 'horario' },
+        { id: 'radialSalida', label: 'Radial final', ayuda: 'El que interceptas al terminar el arco (por ejemplo el curso de aproximación final).', u: '°', v: 180 },
+        { id: 'tramoSalida', label: 'Sobre el radial final vas a ir', tipo: 'seg', opciones: [['acercandose', 'Hacia la estación'], ['alejandose', 'Alejándote']], v: 'acercandose' },
+        { id: 'gs', label: 'Velocidad sobre el terreno (GS)', u: 'kt', v: 120 },
+        { id: 'giro', label: 'Tipo de viraje', tipo: 'seg', opciones: [['estandar', 'Estándar (3°/s)'], ['medio', '½ estándar']], v: 'estandar' },
+      ],
+      calcular(d) {
+        const r = C.arcoDME(d);
+        if (r.error) return `<div class="error">${r.error}</div>`;
+        const lado = (g) => (g >= 0 ? 'derecha' : 'izquierda');
+        const rad = (x) => 'R-' + String(Math.round(C.norm360(x)) % 360).padStart(3, '0');
+        return `<div class="big">${dato('Virar a', f1(r.dmeInicioViraje), 'DME')}${dato('Rumbo en el arco', rumbo(r.rumboArco))}${dato('Virar al final en', rad(r.radialInicioViraje2))}${dato('Curso final', rumbo(r.cursoFinal))}</div>
+          <ol class="pasos">
+            <li><b>Entrada.</b> Volando ${d.tramoEntrada === 'alejandose' ? 'alejándote' : 'acercándote'} por el ${rad(d.radialEntrada)} (rumbo ${rumbo(r.rumboActual)}), al llegar a <b>${f1(r.dmeInicioViraje)} DME</b> vira a la <b>${lado(r.viraje1)}</b> a rumbo <b>${rumbo(r.rumboArco)}</b>. Anticipas ${f1(r.radio)} NM, que es tu radio de viraje.</li>
+            <li><b>Sobre el arco.</b> Mantén la aguja del RMI o del indicador de marcación en la punta del ala ${d.sentido === 'horario' ? 'derecha' : 'izquierda'} (la estación queda de ese lado). Cuando se atrase unos 10° detrás del ala, vira unos 10° hacia la estación y repite. Si el DME aumenta, corrige hacia la estación; si disminuye, aléjate un poco. En esta distancia, cada NM sobre el arco son <b>${f1(r.radialesPorNM)} radiales</b>.</li>
+            <li><b>Salida.</b> Selecciona curso <b>${rumbo(r.cursoFinal)}</b> en el CDI. Al pasar el <b>${rad(r.radialInicioViraje2)}</b> (${f1(r.anticipacion)}° antes del ${rad(d.radialSalida)}) vira a la <b>${lado(r.viraje2)}</b> para quedar ${d.tramoSalida === 'acercandose' ? 'hacia la estación' : 'alejándote'} en curso ${rumbo(r.cursoFinal)}.</li>
+          </ol>
+          <div class="big">${dato('Largo del arco', f1(r.largoNM), 'NM')}${dato('Tiempo en el arco', hm(r.minutos))}${dato('Radio de viraje', f1(r.radio), 'NM')}${dato('Inclinación', f0(r.bank) + '°')}</div>
+          ${r.limitado ? '<div class="aviso">A esta velocidad el viraje estándar pediría más de 25° de inclinación: se calculó con 25°, por eso el radio es mayor.</div>' : ''}
+          ${r.arcoCorto ? '<div class="aviso">El arco es muy corto: casi no hay tramo recto entre los dos virajes.</div>' : ''}
+          ${dibujoArco(d, r)}
+          <div class="aviso">Con viento, la aguja no queda exactamente en el ala: queda adelante o atrás por la corrección de deriva. Si la carta publica un radial de anticipación (lead radial), usa el de la carta.</div>
+          <p class="formula">Radio de viraje estándar ≈ GS ÷ 190 (a 120 kt ≈ 0.6 NM). Entrada: arco − radio (alejándote) o arco + radio (acercándote). Radiales de anticipación = radio × 60 ÷ DME. Largo = π × DME × grados ÷ 180. Fuente: FAA Instrument Flying Handbook (FAA-H-8083-15B), arcos DME. [USA-FAA]</p>`;
+      },
+    },
+    {
       id: 'conv', titulo: 'Conversiones', resumen: 'kt, km/h, ft, m, °C, hPa, inHg, lb, kg, gal, L.',
       intro: 'Escribe un valor y elige qué convertir.',
       campos: [
@@ -224,6 +259,45 @@
       <text x="${x0}" y="${y0 + (y0 < cy ? -6 : 14)}" text-anchor="middle" font-size="11" font-weight="600" fill="#d97706">viento</text>${avion}
     </svg>`;
   }
+  function dibujoArco(d, r) {
+    // Estación al centro, norte arriba. El arco mide 95 px de radio; todo se escala con eso.
+    const cx = 160, cy = 160, k = 95 / d.dme;
+    const horario = d.sentido === 'horario';
+    // punto a cierta distancia (NM) sobre un radial (grados): x = sen, y = −cos (norte arriba)
+    const P = (radial, nm) => [cx + Math.sin(radial * Math.PI / 180) * nm * k, cy - Math.cos(radial * Math.PI / 180) * nm * k];
+    const p = (q) => q.map((n) => n.toFixed(1)).join(' ');
+    const D = d.dme, rr = r.radio, signo = horario ? 1 : -1;
+    // 1) tramo de entrada sobre el radial y viraje (curva) hasta quedar sobre el arco
+    const ini = d.tramoEntrada === 'alejandose' ? P(d.radialEntrada, D * 0.2) : P(d.radialEntrada, D * 1.55);
+    const vir1 = P(d.radialEntrada, r.dmeInicioViraje);
+    const th1 = d.radialEntrada + signo * (rr / D) * 180 / Math.PI;   // radial donde termina el viraje de entrada
+    const enArco1 = P(th1, D);
+    // 2) el arco, desde th1 hasta el radial donde empieza el viraje de salida
+    const th2 = r.radialInicioViraje2;
+    const recorrido = horario ? C.norm360(th2 - th1) : C.norm360(th1 - th2);
+    const enArco2 = P(th2, D);
+    // 3) viraje de salida y tramo final sobre el radial
+    const finVir2 = P(d.radialSalida, d.tramoSalida === 'acercandose' ? D - rr : D + rr);
+    const fin = d.tramoSalida === 'acercandose' ? P(d.radialSalida, D * 0.2) : P(d.radialSalida, D * 1.55);
+    const ruta = `M${p(ini)} L${p(vir1)} Q${p(P(d.radialEntrada, D))} ${p(enArco1)} A${(D * k).toFixed(1)} ${(D * k).toFixed(1)} 0 ${recorrido > 180 ? 1 : 0} ${horario ? 1 : 0} ${p(enArco2)} Q${p(P(d.radialSalida, D))} ${p(finVir2)} L${p(fin)}`;
+    const etiqueta = (radial, txt) => { const q = P(radial, D * 1.42); return `<text x="${q[0].toFixed(1)}" y="${(q[1] + 4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" style="paint-order:stroke;stroke:var(--card);stroke-width:4px">${txt}</text>`; };
+    const R3 = (x) => 'R-' + String(Math.round(C.norm360(x)) % 360).padStart(3, '0');
+    return `<svg class="dib" viewBox="0 0 320 348" role="img" aria-label="Dibujo del arco DME con los puntos de viraje">
+      <defs><marker id="mArc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b82f6"/></marker></defs>
+      <text x="160" y="14" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6">N ↑</text>
+      <circle cx="${cx}" cy="${cy}" r="${(D * k).toFixed(1)}" fill="none" stroke="currentColor" stroke-dasharray="3 5" opacity=".3"/>
+      <line x1="${cx}" y1="${cy}" x2="${p(P(d.radialEntrada, D * 1.6)).split(' ')[0]}" y2="${p(P(d.radialEntrada, D * 1.6)).split(' ')[1]}" stroke="currentColor" opacity=".35"/>
+      <line x1="${cx}" y1="${cy}" x2="${p(P(d.radialSalida, D * 1.6)).split(' ')[0]}" y2="${p(P(d.radialSalida, D * 1.6)).split(' ')[1]}" stroke="currentColor" opacity=".35"/>
+      ${etiqueta(d.radialEntrada, R3(d.radialEntrada))}${etiqueta(d.radialSalida, R3(d.radialSalida))}
+      <path d="${ruta}" fill="none" stroke="#3b82f6" stroke-width="3" marker-end="url(#mArc)"/>
+      <circle cx="${vir1[0].toFixed(1)}" cy="${vir1[1].toFixed(1)}" r="5" fill="#d97706"/>
+      <circle cx="${enArco2[0].toFixed(1)}" cy="${enArco2[1].toFixed(1)}" r="5" fill="#16a34a"/>
+      <rect x="${cx - 6}" y="${cy - 6}" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="2" fill="currentColor"/>
+      <text x="${cx - 10}" y="${cy - 10}" text-anchor="end" font-size="10" fill="currentColor" opacity=".75" style="paint-order:stroke;stroke:var(--card);stroke-width:3px">VOR/DME</text>
+      <g font-size="12"><circle cx="16" cy="334" r="5" fill="#d97706"/><text x="26" y="338" fill="currentColor">virar a ${f1(r.dmeInicioViraje)} DME</text>
+      <circle cx="176" cy="334" r="5" fill="#16a34a"/><text x="186" y="338" fill="currentColor">virar en ${R3(th2)}</text></g>
+    </svg>`;
+  }
   function dibujoPerfil(d, r) {
     const W = 300, H = 150, total = r.tocNM + r.todNM + Math.max(10, (r.tocNM + r.todNM) * 0.4);
     const x = (nm) => 15 + (nm / total) * (W - 30), maxA = d.crucero, y = (a) => H - 20 - (a / maxA) * (H - 45);
@@ -245,7 +319,10 @@
     $('#btnBack').hidden = true;
     const tiles = HERRAMIENTAS.map((h) => `<a class="tile" href="#/${h.id}"><span class="ico">${ICO[h.id]}</span><span><h2>${h.titulo}</h2><p>${h.resumen}</p></span></a>`).join('')
       + `<a class="tile" href="esperas.html"><span class="ico">${ICO.espera}</span><span><h2>Esperas y acrónimos</h2><p>Entrada directa, gota o paralela, práctica y acrónimos de cabina.</p></span></a>`;
-    return `<section class="hola"><h1>Herramientas de vuelo</h1><p>Calcula paso a paso. Funcionan sin internet una vez abiertas.</p></section><div class="grid">${tiles}</div>`;
+    // Guías de estudio (guias.js): no calculan, explican, y la del plan de vuelo arma el mensaje
+    const guias = Object.entries(window.AIrGuias || {}).map(([id, g]) => `<a class="tile" href="#/${id}"><span class="ico">${ICO[id]}</span><span><h2>${g.titulo}</h2><p>${g.resumen}</p></span></a>`).join('');
+    return `<section class="hola"><h1>Herramientas de vuelo</h1><p>Calcula paso a paso. Funcionan sin internet una vez abiertas.</p></section><div class="grid">${tiles}</div>
+      ${guias ? `<section class="hola" style="margin-top:26px"><h1>Guías de estudio</h1><p>Explicadas claro, con fuentes OACI, AFAC y FAA.</p></section><div class="grid">${guias}</div>` : ''}`;
   }
 
   function pantalla(h) {
@@ -293,6 +370,17 @@
     const id = (location.hash.replace(/^#\/?/, '') || '').split('?')[0];
     const h = HERRAMIENTAS.find((x) => x.id === id);
     const vista = $('#vista');
+    const guia = window.AIrGuias && window.AIrGuias[id];
+    if (guia) {
+      // Pantalla de guía: la dibuja guias.js y conecta sus propios botones
+      $('#btnBack').hidden = false;
+      vista.innerHTML = guia.render();
+      document.title = guia.titulo + ' · AIrborne Academy';
+      guia.activar();
+      vista.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+      return;
+    }
     if (!h) { vista.innerHTML = inicio(); document.title = 'AIrborne Academy · Herramientas'; return; }
     vista.innerHTML = pantalla(h);
     document.title = h.titulo + ' · AIrborne Academy';

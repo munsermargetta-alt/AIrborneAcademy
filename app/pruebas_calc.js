@@ -81,5 +81,30 @@ igual('espera rumbo 300, acerc 090 → paralela', C.entradaEspera({ cursoAcercam
 // r = norm(270−240)=30 → gota
 igual('espera rumbo 240, acerc 090 → gota', C.entradaEspera({ cursoAcercamiento: 90, rumbo: 240 }).tipo, 'gota');
 
+// Arcos DME
+// Radio de viraje estándar a 120 kt: v = 61.73 m/s, ω = 0.05236 rad/s → r = 1179 m = 0.637 NM; inclinación ≈ 18.2°
+let v = C.radioViraje(120);
+cerca('radio estándar 120 kt (NM)', v.rNM, 0.637, 0.005); cerca('inclinación estándar 120 kt', v.bank, 18.24, 0.1);
+// A 250 kt el viraje estándar pediría ~35°: se limita a 25° → r = v²/(g·tan25) = 128.6²/(9.80665·0.4663) = 3617 m = 1.95 NM
+v = C.radioViraje(250);
+cerca('radio a 250 kt limitado a 25° (NM)', v.rNM, 1.953, 0.01); igual('250 kt: limitado', v.limitado, true);
+// Ejemplo: saliendo por el R-090, arco de 10 DME en sentido horario hasta el R-180, entrar al acercamiento, GS 120 kt
+let ar = C.arcoDME({ dme: 10, radialEntrada: 90, tramoEntrada: 'alejandose', sentido: 'horario', radialSalida: 180, tramoSalida: 'acercandose', gs: 120 });
+cerca('arco: DME para empezar a virar (10 − 0.64)', ar.dmeInicioViraje, 9.363, 0.01);
+cerca('arco: rumbo sobre el arco 180', ar.rumboArco, 180, 0.001);
+cerca('arco: viraje de entrada +90 (derecha)', ar.viraje1, 90, 0.001);
+cerca('arco: 90° de arco = 15.7 NM', ar.largoNM, 15.708, 0.01);
+cerca('arco: radiales de anticipación 0.637×6', ar.anticipacion, 3.82, 0.02);
+cerca('arco: radial para empezar a virar ≈ 176', ar.radialInicioViraje2, 176.18, 0.02);
+cerca('arco: curso final 360', ar.cursoFinal % 360, 0, 0.001);
+cerca('arco: viraje de salida +90 (derecha)', ar.viraje2, 90, 0.001);
+// Mismo arco antihorario del R-090 al R-360 acercándose a la estación por el R-090: empieza en 10.64 DME, rumbo 360
+ar = C.arcoDME({ dme: 10, radialEntrada: 90, tramoEntrada: 'acercandose', sentido: 'antihorario', radialSalida: 0, tramoSalida: 'acercandose', gs: 120 });
+cerca('antihorario: DME de inicio 10.64', ar.dmeInicioViraje, 10.637, 0.01);
+cerca('antihorario: rumbo sobre el arco 000', ar.rumboArco % 360, 0, 0.001);
+cerca('antihorario: viraje de entrada +90 (de 270 a 360, derecha)', ar.viraje1, 90, 0.001);
+cerca('antihorario: radial de anticipación ≈ 003.8', ar.radialInicioViraje2, 3.82, 0.02);
+cerca('antihorario: viraje de salida −90 (izquierda)', ar.viraje2, -90, 0.001);
+
 console.log(`\n${ok} correctas, ${mal} con error`);
 process.exit(mal ? 1 : 0);

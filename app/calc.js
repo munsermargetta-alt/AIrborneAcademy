@@ -178,8 +178,86 @@ function entradaEspera({ cursoAcercamiento, rumbo, virajes = 'derecha' }) {
   return { tipo, r, cercaDeLimite: cerca <= 5 };
 }
 
+/* 9) ARCO DME: ENTRAR AL ARCO DESDE UN RADIAL Y SALIR DEL ARCO A OTRO RADIAL
+ * Un arco DME es volar en círculo alrededor de una estación VOR/DME a una distancia fija.
+ *
+ * Radio de viraje (r), según el tipo de viraje y la velocidad:
+ *   - viraje estándar = 3°/s (½ estándar = 1.5°/s). Sin límite: r = V / ω.
+ *   - inclinación necesaria: tan φ = V·ω / g. Si pasa de 25°, se limita a 25° (práctica común)
+ *     y entonces r = V² / (g · tan 25°).
+ *   Con viraje estándar sale r ≈ GS ÷ 190 (la regla de cabeza "0.5 % de la GS"):
+ *   120 kt → 0.64 NM.  (Se usa la GS: con viento el radio real cambia; es una estimación.)
+ *
+ * ENTRADA (de radial a arco), viraje de unos 90°:
+ *   - alejándote de la estación: empieza a virar en  DME = arco − r
+ *   - acercándote a la estación: empieza a virar en  DME = arco + r
+ *   - rumbo inicial sobre el arco (tangente): radial + 90° si recorres el arco en sentido horario
+ *     (los radiales van subiendo), radial − 90° si es antihorario.
+ *
+ * SALIDA (de arco a radial), viraje de unos 90°:
+ *   - radiales de anticipación = r × 60 / DME   (regla 60:1: a 10 DME, 1 NM ≈ 6 radiales)
+ *   - empiezas a virar ese número de radiales ANTES del radial final.
+ *   - curso a seleccionar: al acercarte = radial + 180 (TO); al alejarte = el radial (FROM).
+ *
+ * Longitud del arco = π · DME · Δ / 180   (Δ = grados recorridos alrededor de la estación)
+ *
+ * Fuentes: FAA Instrument Flying Handbook (FAA-H-8083-15B), cap. 9, arcos DME;
+ * manuales de vuelo por instrumentos de la US Navy (regla 60/DME × 1 % de la GS).
+ */
+const G = 9.80665;               // gravedad (m/s²)
+const KT_MS = 1852 / 3600;       // 1 nudo en m/s
+function radioViraje(gs, giro = 'estandar', maxBank = 25) {
+  const w = rad(giro === 'medio' ? 1.5 : 3);          // velocidad angular en rad/s
+  const v = gs * KT_MS;                                 // velocidad en m/s
+  let bank = deg(Math.atan(v * w / G));                 // inclinación necesaria
+  let rM;
+  if (bank > maxBank) { bank = maxBank; rM = v * v / (G * Math.tan(rad(maxBank))); }  // limitado a 25°
+  else rM = v / w;
+  return { rNM: rM / 1852, bank, limitado: bank === maxBank };
+}
+
+function arcoDME({ dme, radialEntrada, tramoEntrada = 'alejandose', sentido = 'horario',
+  radialSalida, tramoSalida = 'acercandose', gs, giro = 'estandar' }) {
+  if (!(dme > 0)) return { error: 'La distancia del arco debe ser mayor que cero.' };
+  if (!(gs > 0)) return { error: 'La velocidad sobre el terreno debe ser mayor que cero.' };
+  const vir = radioViraje(gs, giro);
+  const r = vir.rNM;
+  if (r >= dme * 0.5) return { error: 'El radio de viraje es demasiado grande para un arco tan cerrado. Baja la velocidad o usa un arco más lejano.' };
+  const horario = sentido === 'horario';
+
+  // --- Entrada al arco ---
+  const dmeInicioViraje = tramoEntrada === 'alejandose' ? dme - r : dme + r;
+  const rumboActual = tramoEntrada === 'alejandose' ? norm360(radialEntrada) : norm360(radialEntrada + 180);
+  const rumboArco = norm360(radialEntrada + (horario ? 90 : -90));          // tangente al arco
+  const viraje1 = norm180(rumboArco - rumboActual);                         // + derecha, − izquierda
+
+  // --- Recorrido sobre el arco ---
+  const delta = horario ? norm360(radialSalida - radialEntrada) : norm360(radialEntrada - radialSalida);
+  const largoNM = Math.PI * dme * delta / 180;
+  const minutos = largoNM / gs * 60;
+  const radialesPorNM = 60 / dme;
+
+  // --- Salida al radial final ---
+  const anticipacion = r * radialesPorNM;                                   // grados (radiales)
+  const radialInicioViraje2 = norm360(radialSalida + (horario ? -anticipacion : anticipacion));
+  const cursoFinal = tramoSalida === 'acercandose' ? norm360(radialSalida + 180) : norm360(radialSalida);
+  // rumbo sobre el arco justo al llegar al radial final (tangente en ese punto)
+  const rumboArcoFinal = norm360(radialSalida + (horario ? 90 : -90));
+  const viraje2 = norm180(cursoFinal - rumboArcoFinal);
+
+  return {
+    radio: r, bank: vir.bank, limitado: vir.limitado,
+    dmeInicioViraje, rumboActual, rumboArco, viraje1,
+    delta, largoNM, minutos, radialesPorNM,
+    anticipacion, radialInicioViraje2, cursoFinal, rumboArcoFinal, viraje2,
+    // aviso si el arco es muy corto para virar dos veces
+    arcoCorto: delta < anticipacion + 5,
+  };
+}
+
 const AIrCalc = { norm360, norm180, trianguloViento, tiempoDistancia, altitudes, componentesViento,
-  perfil, gradienteARegimen, regimenAGradiente, porcientoAFtNm, ftNmAPorciento, ftNmAGrados, conv, entradaEspera };
+  perfil, gradienteARegimen, regimenAGradiente, porcientoAFtNm, ftNmAPorciento, ftNmAGrados, conv, entradaEspera,
+  radioViraje, arcoDME };
 
 if (typeof module !== 'undefined') module.exports = AIrCalc;   // para las pruebas en Node
 if (typeof window !== 'undefined') window.AIrCalc = AIrCalc;    // para la app en el navegador

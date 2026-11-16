@@ -6,9 +6,9 @@
  *    si no hay señal, usa la copia guardada.
  *  - Para publicar una versión nueva, cambia VERSION y los teléfonos se actualizan solos.
  */
-const VERSION = 'airborne-herramientas-v2';
+const VERSION = 'airborne-herramientas-v3';
 const ARCHIVOS = [
-  './', './index.html', './app.css', './app.js', './calc.js', './esperas.html', './manifest.webmanifest',
+  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './esperas.html', './manifest.webmanifest',
   './icono-180.png', './icono-192.png', './icono-512.png', './icono-maskable-512.png',
   '../img/logo.png', '../img/favicon-32.png',
 ];
