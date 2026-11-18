@@ -222,6 +222,94 @@
     }
   }
 
+  /* ---------- Niveles de crucero según la derrota (México y EUA) ---------- */
+  function seccionNiveles() {
+    return `<div class="card" style="margin-top:16px" id="niveles">
+      <h2>Altitudes y niveles de crucero según la derrota</h2>
+      <p class="nota">La regla semicircular separa a quien vuela hacia el este de quien vuela hacia el oeste, y la regla de +500 ft separa VFR de IFR. Escribe tu derrota magnética y toca un nivel para ponerlo en la casilla 15.</p>
+      <div class="cols">
+        <div>
+          <div class="campo"><label>País</label><div class="seg" id="nvPais"><button type="button" data-v="MX" aria-pressed="true">México</button><button type="button" data-v="US" aria-pressed="false">EUA</button></div></div>
+          <div class="campo"><label>Reglas</label><div class="seg" id="nvReglas"><button type="button" data-v="VFR" aria-pressed="true">VFR</button><button type="button" data-v="IFR" aria-pressed="false">IFR</button></div></div>
+          <div class="campo"><label for="nvDerrota">Derrota magnética</label><div class="fila"><input id="nvDerrota" type="number" inputmode="decimal" value="110"><span class="u">°</span></div></div>
+          <div class="campo"><label for="nvMin">Altitud mínima segura de tu ruta</label><div class="fila"><input id="nvMin" type="number" inputmode="decimal" value="11000"><span class="u">ft</span></div><div class="ayuda">La más alta entre MEA, MOCA, terreno + margen y lo que pida tu ruta. Del Valle de Toluca hacia Puebla pasas cerca de volcanes: no bajes de lo que marque tu carta.</div></div>
+        </div>
+        <div><div id="nvDibujo"></div></div>
+      </div>
+      <div id="nvLista"></div>
+      <div class="tabla"><table>
+        <thead><tr><th></th><th>México [MX-AFAC]</th><th>EUA [USA-FAA]</th></tr></thead>
+        <tbody>
+          <tr><td>Se toma en cuenta</td><td>Derrota magnética</td><td>Curso magnético</td></tr>
+          <tr><td>000° a 179°</td><td>IFR impares · VFR impares + 500</td><td>IFR impares · VFR impares + 500</td></tr>
+          <tr><td>180° a 359°</td><td>IFR pares · VFR pares + 500</td><td>IFR pares · VFR pares + 500</td></tr>
+          <tr><td>Altitud de transición</td><td>18,500 ft</td><td>18,000 ft</td></tr>
+          <tr><td>Nivel de transición</td><td>FL195</td><td>FL180</td></tr>
+          <tr><td>VFR en lo alto</td><td>Según el Anexo 2 de la OACI, no arriba de FL200 salvo autorización</td><td>No en clase A (18,000 ft MSL y arriba)</td></tr>
+          <tr><td>VFR: desde cuándo aplica</td><td>Arriba de 3,000 ft sobre el terreno o el agua (Anexo 2)</td><td>Arriba de 3,000 ft AGL (91.159)</td></tr>
+          <tr><td>RVSM (FL290 a FL410)</td><td>Este: 290, 310 … 410 · Oeste: 300, 320 … 400</td><td>Igual</td></tr>
+        </tbody></table></div>
+      <div class="aviso">El control de tránsito puede asignarte otro nivel: en espacio controlado IFR, manda lo que te autoricen. Los valores de México salen de las cartas vigentes; confírmalos en el PIA (ENR 1.7) antes de volar.</div>
+      <p class="fuente">[OACI] Anexo 2, Apéndice 3 (tabla de niveles de crucero). [MX-AFAC] PIA México, ENR 1.7; NOM-091-SCT3-2004 (RVSM). [USA-FAA] 14 CFR 91.121, 91.159 y 91.179.</p>
+    </div>`;
+  }
+  function dibujoNiveles(r, pais, reglas) {
+    // Semicírculos: derecha 000–179 (impares), izquierda 180–359 (pares). Norte arriba.
+    const cx = 160, cy = 160, R = 118;
+    const a = r.derrota * Math.PI / 180;
+    const px = cx + Math.sin(a) * (R - 6), py = cy - Math.cos(a) * (R - 6);
+    const on = (lado) => (r.este === (lado === 'E') ? 1 : 0.35);
+    const v = reglas === 'VFR';
+    return `<svg class="dib" viewBox="0 0 320 330" role="img" aria-label="Regla semicircular: derrota ${Math.round(r.derrota)} grados">
+      <defs><marker id="mNv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d97706"/></marker></defs>
+      <path d="M${cx} ${cy - R} A${R} ${R} 0 0 1 ${cx} ${cy + R} Z" fill="#3b82f6" opacity="${0.18 * on('E') + 0.04}"/>
+      <path d="M${cx} ${cy + R} A${R} ${R} 0 0 1 ${cx} ${cy - R} Z" fill="#f2b73a" opacity="${0.22 * on('W') + 0.04}"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="${cx}" y1="${cy - R}" x2="${cx}" y2="${cy + R}" stroke="currentColor" stroke-width="3"/>
+      <g font-size="12" fill="currentColor" text-anchor="middle" font-weight="700">
+        <text x="${cx}" y="${cy - R - 8}">000°</text><text x="${cx}" y="${cy + R + 18}">180°</text>
+        <text x="${cx + 62}" y="${cy - 40}" opacity="${on('E')}">000° – 179°</text>
+        <text x="${cx + 62}" y="${cy - 18}" opacity="${on('E')}" font-weight="400">IFR: impares</text>
+        <text x="${cx + 62}" y="${cy + 2}" opacity="${on('E')}" font-weight="400">VFR: impares</text>
+        <text x="${cx + 62}" y="${cy + 18}" opacity="${on('E')}" font-weight="400">+ 500 ft</text>
+        <text x="${cx - 62}" y="${cy - 40}" opacity="${on('W')}">180° – 359°</text>
+        <text x="${cx - 62}" y="${cy - 18}" opacity="${on('W')}" font-weight="400">IFR: pares</text>
+        <text x="${cx - 62}" y="${cy + 2}" opacity="${on('W')}" font-weight="400">VFR: pares</text>
+        <text x="${cx - 62}" y="${cy + 18}" opacity="${on('W')}" font-weight="400">+ 500 ft</text>
+      </g>
+      <line x1="${cx}" y1="${cy}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="#d97706" stroke-width="4" marker-end="url(#mNv)"/>
+      <circle cx="${cx}" cy="${cy}" r="5" fill="#d97706"/>
+      <text x="${cx}" y="${cy + 62}" text-anchor="middle" font-size="13" font-weight="700" fill="#d97706">${String(Math.round(r.derrota) % 360).padStart(3, '0')}° · ${v ? 'VFR' : 'IFR'} · ${pais === 'MX' ? 'México' : 'EUA'}</text>
+      <text x="${cx}" y="322" text-anchor="middle" font-size="11" fill="currentColor" opacity=".75">Transición: ${r.TA.toLocaleString('en-US')} ft / FL${r.TL}</text>
+    </svg>`;
+  }
+  function activarNiveles(form, pintar) {
+    const est = { pais: 'MX', reglas: 'VFR' };
+    const seg = (id, k) => document.querySelectorAll(`#${id} button`).forEach((b) => b.addEventListener('click', () => {
+      est[k] = b.dataset.v; document.querySelectorAll(`#${id} button`).forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); dibujar();
+    }));
+    const dibujar = () => {
+      const derrota = parseFloat($('#nvDerrota').value);
+      if (!isFinite(derrota)) { $('#nvLista').innerHTML = '<p class="nota">Escribe la derrota magnética.</p>'; return; }
+      const minimo = parseFloat($('#nvMin').value) || 0;
+      const r = window.AIrCalc.nivelesCrucero({ derrota, reglas: est.reglas, pais: est.pais, minimo });
+      $('#nvDibujo').innerHTML = dibujoNiveles(r, est.pais, est.reglas);
+      const aCasilla = (x) => (x.tipo === 'FL' ? 'F' + x.texto.slice(2) : 'A' + String(Math.round(x.ft / 100)).padStart(3, '0'));
+      $('#nvLista').innerHTML = r.lista.length
+        ? `<p>Niveles válidos para ${String(Math.round(r.derrota) % 360).padStart(3, '0')}° (${est.reglas}, ${est.pais === 'MX' ? 'México' : 'EUA'}), desde ${minimo.toLocaleString('en-US')} ft:</p>
+           <div class="chips">${r.lista.map((x) => `<button type="button" class="chip" data-nivel="${aCasilla(x)}" title="Casilla 15: ${aCasilla(x)}">${x.texto}</button>`).join('')}</div>
+           ${est.reglas === 'VFR' ? `<p class="nota">VFR: la lista termina en la altitud de transición (${est.pais === 'MX' ? 'en México, además, el Anexo 2 no permite VFR arriba de FL200 salvo autorización' : 'en EUA no hay VFR en clase A, de 18,000 ft hacia arriba'}).</p>` : ''}`
+        : '<p class="nota">No hay niveles válidos arriba de esa altitud mínima con estas reglas.</p>';
+      $('#nvLista').querySelectorAll('[data-nivel]').forEach((b) => b.addEventListener('click', () => {
+        const i = form.querySelector('[data-id="nivel"]'); i.value = b.dataset.nivel; pintar();
+        $('#nvLista').querySelectorAll('.chip').forEach((c) => c.classList.toggle('activo', c === b));
+      }));
+    };
+    seg('nvPais', 'pais'); seg('nvReglas', 'reglas');
+    ['nvDerrota', 'nvMin'].forEach((id) => $('#' + id).addEventListener('input', dibujar));
+    dibujar();
+  }
+
   const plan = {
     titulo: 'Plan de vuelo OACI',
     resumen: 'Casilla por casilla, con ejemplos, y un armador que revisa tus errores.',
@@ -250,7 +338,10 @@
           <li><b>S</b> ya incluye VHF, VOR e ILS: no repitas V, O ni L.</li>
           <li>En la casilla 10b va <b>una sola letra de transpondedor</b>, más los códigos de ADS-B si los tienes.</li>
           <li>La casilla 19 no se transmite en el mensaje: se queda en la oficina ATS para búsqueda y salvamento.</li>
+          <li><b>Nivel según la derrota magnética</b> (no el rumbo): de 000° a 179°, miles <b>impares</b>; de 180° a 359°, miles <b>pares</b>. IFR en miles exactos; VFR en miles <b>+ 500 ft</b>. En la casilla 15 se escribe con A + 3 cifras (A095 = 9,500 ft) o F + 3 (F350).</li>
+          <li><b>Altitud y nivel de transición:</b> en México 18,500 ft y FL195; en EUA 18,000 ft y FL180. Abajo vuelas en altitud con QNH; arriba, en nivel de vuelo con 1013.2 hPa (29.92 inHg).</li>
         </ul>
+        ${seccionNiveles()}
         <div class="aviso">El ejemplo IFR es ilustrativo: la ruta (DCT) y la altitud no son una ruta real. En un vuelo real, la ruta y los niveles salen del PIA (AIP) de México. Revisa también ENR 1.10 del PIA y lo que pida SENEAM para presentar tu plan.</div>
         <p class="fuente">[OACI] PANS-ATM, Doc 4444, Apéndice 2, con la enmienda 1 (formato vigente desde el 15 de noviembre de 2012). [MX-AFAC] Formato de plan de vuelo F-1-1407 y "Manual de apoyo con rutas para el FPL" de SENEAM, ambos publicados en gob.mx.</p>
       </section>`;
@@ -309,6 +400,7 @@
       }));
       pintar();
       pintarRutas();
+      activarNiveles(form, pintar);
     },
   };
 

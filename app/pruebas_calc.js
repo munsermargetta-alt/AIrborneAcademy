@@ -106,5 +106,22 @@ cerca('antihorario: viraje de entrada +90 (de 270 a 360, derecha)', ar.viraje1, 
 cerca('antihorario: radial de anticipación ≈ 003.8', ar.radialInicioViraje2, 3.82, 0.02);
 cerca('antihorario: viraje de salida −90 (izquierda)', ar.viraje2, -90, 0.001);
 
+// Niveles de crucero
+const txt = (r) => r.lista.map((x) => x.texto).join(' ');
+let nc = C.nivelesCrucero({ derrota: 90, reglas: 'VFR', pais: 'MX' });
+igual('MX VFR al este', txt(nc), '3,500 ft 5,500 ft 7,500 ft 9,500 ft 11,500 ft 13,500 ft 15,500 ft 17,500 ft');
+nc = C.nivelesCrucero({ derrota: 270, reglas: 'VFR', pais: 'MX' });
+igual('MX VFR al oeste (18,500 = altitud de transición)', txt(nc), '4,500 ft 6,500 ft 8,500 ft 10,500 ft 12,500 ft 14,500 ft 16,500 ft 18,500 ft');
+nc = C.nivelesCrucero({ derrota: 179, reglas: 'IFR', pais: 'MX', minimo: 15000 });
+igual('MX IFR 179° (este) desde 15,000', txt(nc), '15,000 ft 17,000 ft FL210 FL230 FL250 FL270 FL290 FL310 FL330 FL350 FL370 FL390 FL410');
+nc = C.nivelesCrucero({ derrota: 180, reglas: 'IFR', pais: 'MX', minimo: 15000 });
+igual('MX IFR 180° (oeste) desde 15,000', txt(nc), '16,000 ft 18,000 ft FL200 FL220 FL240 FL260 FL280 FL300 FL320 FL340 FL360 FL380 FL400');
+nc = C.nivelesCrucero({ derrota: 0, reglas: 'IFR', pais: 'US', minimo: 15000 });
+igual('EUA IFR 000° desde 15,000', txt(nc), '15,000 ft 17,000 ft FL190 FL210 FL230 FL250 FL270 FL290 FL310 FL330 FL350 FL370 FL390 FL410');
+nc = C.nivelesCrucero({ derrota: 359, reglas: 'VFR', pais: 'US', minimo: 15000 });
+igual('EUA VFR 359° desde 15,000 (nada de 18,500: clase A)', txt(nc), '16,500 ft');
+nc = C.nivelesCrucero({ derrota: 200, reglas: 'IFR', pais: 'US', minimo: 15000 });
+igual('EUA IFR 200° desde 15,000', txt(nc), '16,000 ft FL180 FL200 FL220 FL240 FL260 FL280 FL300 FL320 FL340 FL360 FL380 FL400');
+
 console.log(`\n${ok} correctas, ${mal} con error`);
 process.exit(mal ? 1 : 0);

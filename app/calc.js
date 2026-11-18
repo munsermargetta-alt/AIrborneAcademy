@@ -255,9 +255,46 @@ function arcoDME({ dme, radialEntrada, tramoEntrada = 'alejandose', sentido = 'h
   };
 }
 
+/* 10) NIVELES DE CRUCERO SEGÚN LA DERROTA (regla semicircular, "hemisférica")
+ * Derrota / curso MAGNÉTICO (no rumbo): de 000° a 179° → miles IMPARES; de 180° a 359° → miles PARES.
+ * IFR: miles exactos (3,000, 5,000…).  VFR: miles + 500 ft (3,500, 5,500…).
+ * Abajo de la altitud de transición se vuela en ALTITUD (con QNH); arriba del nivel de transición en NIVEL DE VUELO (1013.2 hPa / 29.92).
+ *   - México: altitud de transición 18,500 ft, nivel de transición FL195 (cartas de México; confírmalo en el PIA, ENR 1.7).
+ *   - EUA: 18,000 ft MSL y FL180 (14 CFR 91.121). 14 CFR 91.159 (VFR) y 91.179 (IFR).
+ * RVSM (FL290–FL410, México y EUA): hacia el este FL290, 310 … 410; hacia el oeste FL300, 320 … 400.
+ * Fuera del rango (arriba de FL410) no se calcula aquí.
+ */
+function nivelesCrucero({ derrota, reglas = 'IFR', pais = 'MX', minimo = 3000 }) {
+  const d = norm360(derrota);
+  const este = d < 180;                                  // 000–179
+  const TA = pais === 'MX' ? 18500 : 18000;              // altitud de transición (ft)
+  const TL = pais === 'MX' ? 195 : 180;                  // nivel de transición (FL)
+  const lista = [];
+  const vfr = reglas === 'VFR';
+  // 1) Altitudes (debajo o en la altitud de transición)
+  for (let mil = 1; mil <= 19; mil++) {
+    if ((mil % 2 === 1) !== este) continue;              // impares al este, pares al oeste
+    const ft = mil * 1000 + (vfr ? 500 : 0);
+    if (ft < minimo) continue;
+    const enAltitud = pais === 'MX' ? ft <= TA : ft < TA;
+    if (enAltitud) lista.push({ texto: ft.toLocaleString('en-US') + ' ft', ft, tipo: 'alt' });
+  }
+  // 2) Niveles de vuelo (en o arriba del nivel de transición). VFR: no en EUA (espacio clase A) y,
+  //    según el Anexo 2 de la OACI, no arriba de FL200 salvo autorización: aquí no se listan.
+  if (!vfr) {
+    for (let fl = Math.ceil(TL / 10) * 10; fl <= 410; fl += 10) {   // FL195 → el primero completo es FL200
+      const miles = fl / 10;
+      if (fl >= 290) { if ((este && (fl - 290) % 20 !== 0) || (!este && (fl - 300) % 20 !== 0)) continue; } // RVSM
+      else if ((miles % 2 === 1) !== este) continue;
+      lista.push({ texto: 'FL' + String(fl).padStart(3, '0'), ft: fl * 100, tipo: 'FL' });
+    }
+  }
+  return { derrota: d, este, TA, TL, lista };
+}
+
 const AIrCalc = { norm360, norm180, trianguloViento, tiempoDistancia, altitudes, componentesViento,
   perfil, gradienteARegimen, regimenAGradiente, porcientoAFtNm, ftNmAPorciento, ftNmAGrados, conv, entradaEspera,
-  radioViraje, arcoDME };
+  radioViraje, arcoDME, nivelesCrucero };
 
 if (typeof module !== 'undefined') module.exports = AIrCalc;   // para las pruebas en Node
 if (typeof window !== 'undefined') window.AIrCalc = AIrCalc;    // para la app en el navegador
