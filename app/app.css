@@ -144,3 +144,9 @@ table.codigos tr.malo td{background:rgba(220,38,38,.08)}
 table.codigos tr.malo td:first-child code{color:var(--bad);font-weight:700}
 table.codigos tr.gris td{color:var(--muted)}
 table.codigos i[lang=en]{color:var(--muted);font-size:14px}
+/* web: tarjeta de la app y rescate de bitácora */
+.applista{margin:10px 0 14px;padding-left:20px;color:#c9d3e6;font-size:15px;display:grid;gap:4px}
+.applista b{color:#fff}
+.procab .boton.oro{text-decoration:none}
+.aviso-card{border-color:var(--gold);margin-top:16px}
+.aviso-card h2{font-size:18px;margin-bottom:6px}

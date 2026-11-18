@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Descargar AIrborne Academy</title>
+<meta name="description" content="Descarga la app AIrborne Academy para iPhone y Android.">
+<link rel="icon" href="../img/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../estilos.css">
+<!--
+  descargar/index.html — destino del código QR.
+  Qué hace:
+   1. Detecta si el teléfono es iPhone/iPad o Android.
+   2. Si la app ya está publicada en esa tienda (dirección escrita abajo), lo manda directo a la tienda.
+   3. Si todavía no está publicada, o si es una computadora, muestra esta página con las opciones.
+  Cuando las apps estén en las tiendas, solo hay que escribir sus direcciones en TIENDAS.
+-->
+<script>
+  const TIENDAS = {
+    android: '',   // ej. 'https://play.google.com/store/apps/details?id=app.airborneacademy'
+    apple: '',     // ej. 'https://apps.apple.com/mx/app/airborne-academy/id0000000000'
+  };
+  (function () {
+    const ua = navigator.userAgent || '';
+    // Los iPad nuevos se presentan como Mac: se distinguen porque tienen pantalla táctil
+    const esApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+    const esAndroid = /Android/i.test(ua);
+    const destino = esApple ? TIENDAS.apple : esAndroid ? TIENDAS.android : '';
+    if (destino) location.replace(destino);
+    // Para que la página sepa qué mostrar
+    document.documentElement.dataset.equipo = esApple ? 'apple' : esAndroid ? 'android' : 'otro';
+  })();
+</script>
+<style>
+  body{background:var(--navy);color:#fff;min-height:100vh;display:grid;place-items:center}
+  .caja{max-width:560px;padding:40px 22px;display:grid;gap:18px;text-align:center;justify-items:center}
+  .caja img.logo{height:56px;width:auto}
+  .caja h1{font-size:clamp(28px,6vw,38px)}
+  .caja p{color:#c7d0e2}
+  .tiendas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .tienda{min-width:200px;border:1.5px solid rgba(255,255,255,.35);border-radius:14px;padding:12px 18px;color:#fff;text-decoration:none;display:grid;gap:2px}
+  .tienda small{color:var(--gold);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+  .tienda b{font-family:var(--display);font-size:18px}
+  .btn.line{border-color:rgba(255,255,255,.5)}
+</style>
+</head>
+<body>
+  <main class="caja">
+    <img class="logo" src="../img/logo.png" alt="AIrborne Academy">
+    <span class="eyebrow">Muy pronto</span>
+    <h1>La app AIrborne Academy está por despegar</h1>
+    <p>Estamos terminando las versiones para iPhone y Android. En cuanto estén en las tiendas, este mismo código te llevará directo a la tuya.</p>
+    <div class="tiendas" aria-label="Tiendas">
+      <span class="tienda"><small>Próximamente</small><b>Google Play</b></span>
+      <span class="tienda"><small>Próximamente</small><b>App Store</b></span>
+    </div>
+    <p>Mientras tanto, usa gratis las herramientas de la web:</p>
+    <div class="ctas" style="justify-content:center">
+      <a class="btn gold" href="../app/">METAR, TAF, plan de vuelo y conversiones</a>
+      <a class="btn line" href="../">Conocer AIrborne Academy</a>
+    </div>
+  </main>
+</body>
+</html>

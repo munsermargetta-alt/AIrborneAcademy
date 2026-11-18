@@ -93,3 +93,21 @@ footer img{height:38px;width:auto}
 .updated{color:var(--muted);font-size:15px}
 .fill{background:#fff2c4;border-radius:4px;padding:0 4px;font-weight:600}
 .draft{background:#fff4dc;border:1px solid #f0c66b;border-radius:12px;padding:14px 16px;margin:18px 0;font-size:16px}
+
+/* herramientas gratis */
+.feat.gratis a{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:8px;align-content:start;color:inherit;text-decoration:none;transition:border-color .15s,transform .15s}
+.feat.gratis a:hover{border-color:var(--gold);transform:translateY(-2px)}
+.feat.gratis a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+/* descarga con QR */
+.descarga{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:center}
+.descarga .txt{display:grid;gap:14px;max-width:560px;justify-items:start}
+.descarga h2{font-size:clamp(28px,4vw,40px)}
+.descarga p{color:#c7d0e2}
+.descarga .pronto{color:var(--gold);font-weight:600}
+.qr{margin:0;display:grid;gap:10px;justify-items:center;background:#fff;border-radius:20px;padding:18px 18px 14px}
+.qr img{width:220px;height:220px}
+.qr figcaption{color:var(--navy);font-size:15px;font-weight:600}
+.solo-movil{display:none}
+.steps a{color:var(--gold)}
+@media (max-width:760px){.descarga{grid-template-columns:minmax(0,1fr)}.qr{display:none}.solo-movil{display:inline-flex}}
+.steps li{color:#fff}

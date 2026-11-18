@@ -353,10 +353,10 @@
       { id: 'bitacora', claves: 'horas bitácora logbook calzo a calzo hobbs escuela cobro' },
     ] },
   ];
-  // Cuando exista el cobro (cuentas y suscripciones), poner en true: las herramientas Pro
-  // mostrarán la invitación a suscribirse. OJO: en una página estática esto es un "candado de cortesía";
-  // el candado real lo pone el servidor entregando los módulos Pro solo a suscriptores.
-  const CANDADO_PRO = false;
+  // La WEB solo ofrece las herramientas gratis; todo lo Pro vive en las apps de Play Store y App Store
+  // (decisión del 18-nov-2026: en las apps nativas sí se puede proteger el contenido contra capturas y proyección).
+  // true = en la web, las herramientas Pro muestran la invitación a descargar la app.
+  const CANDADO_PRO = true;
   const GRATIS = new Set(CATALOGO.filter((g) => g.plan === 'gratis').flatMap((g) => g.items.map((x) => x.id)));
 
   // Título y resumen de cada ficha: de la lista de calculadoras, de las guías o del propio catálogo
@@ -371,17 +371,60 @@
     $('#btnBack').hidden = true;
     const tile = (f, plan) => `<a class="tile" href="${f.href}" data-buscar="${sinAcentos(f.titulo + ' ' + f.resumen + ' ' + (f.claves || ''))}">
         <span class="ico">${ICO[f.id] || ''}</span><span><h2>${f.titulo}${plan === 'gratis' ? '' : ' <span class="pro">PRO</span>'}</h2><p>${f.resumen}</p></span></a>`;
-    const secciones = CATALOGO.map((g) => {
+    const grupos = CANDADO_PRO ? CATALOGO.filter((g) => g.plan === 'gratis') : CATALOGO;
+    const secciones = grupos.map((g) => {
       const fichas = g.items.map(ficha).filter(Boolean);
       return `<section class="grupo plan-${g.plan}" data-grupo><div class="grupocab"><h2>${g.titulo}</h2>${g.plan === 'gratis' ? '<span class="gratis-et">GRATIS</span>' : ''}<p>${g.sub}</p></div>
         <div class="grid">${fichas.map((f) => tile(f, g.plan)).join('')}</div></section>`;
     });
-    // Las secciones Pro van bajo un encabezado propio, para que se entienda qué es gratis y qué no
-    const iPro = CATALOGO.findIndex((g) => g.plan === 'pro');
-    secciones.splice(iPro, 0, `<div class="procab" data-grupo-titulo><h1>AIrborne Pro</h1><p>${CANDADO_PRO ? 'Todo lo de abajo es parte de la suscripción.' : '<b>Acceso anticipado:</b> durante la beta todo está abierto. Las herramientas marcadas <span class="pro">PRO</span> serán parte de la suscripción.'}</p></div>`);
-    return `<section class="hola"><h1>Herramientas de vuelo</h1><p>Encuentra lo que necesitas o búscalo. Funcionan sin internet una vez abiertas (menos la consulta de METAR y TAF en vivo).</p>
-      <div class="buscador"><span class="ico-b">${ICO.buscar}</span><input id="buscar" type="search" placeholder="Buscar: METAR, viento cruzado, bitácora…" autocomplete="off" aria-label="Buscar herramienta"></div></section>
-      ${secciones.join('')}<p class="nota" id="sinResultados" hidden>No encontré nada con esa palabra. Prueba con otra, por ejemplo "combustible" o "espera".</p>`;
+    if (CANDADO_PRO) secciones.push(tarjetaApp());
+    else {
+      // Las secciones Pro van bajo un encabezado propio, para que se entienda qué es gratis y qué no
+      const iPro = CATALOGO.findIndex((g) => g.plan === 'pro');
+      secciones.splice(iPro, 0, `<div class="procab" data-grupo-titulo><h1>AIrborne Pro</h1><p><b>Acceso anticipado:</b> las herramientas marcadas <span class="pro">PRO</span> serán parte de la suscripción.</p></div>`);
+    }
+    return `<section class="hola"><h1>Herramientas de AIrborne Academy</h1><p>METAR y TAF en vivo, plan de vuelo OACI con formato AFAC y conversiones. Libres para todos, siempre.</p>
+      <div class="buscador"><span class="ico-b">${ICO.buscar}</span><input id="buscar" type="search" placeholder="Buscar: METAR, plan de vuelo, nudos…" autocomplete="off" aria-label="Buscar herramienta"></div></section>
+      ${rescateBitacora()}${secciones.join('')}<p class="nota" id="sinResultados" hidden>No encontré nada con esa palabra. Prueba con "METAR", "plan" o "nudos".</p>`;
+  }
+  // Tarjeta que presenta la app (lo Pro): solo texto, sin enlaces a herramientas que en la web no existen
+  function tarjetaApp() {
+    const lista = [
+      ['Planeación y performance', 'Triángulo de viento, tiempo y combustible, altitudes y TAS, viento cruzado, ascenso y descenso, peso y balance'],
+      ['Vuelo por instrumentos', 'Gradientes de salida, arcos DME, esperas, guía PBN'],
+      ['Licencia y carrera', 'Inglés aeronáutico RTARI con voz, bitácora de horas con base legal'],
+      ['Y en camino', 'Clases en video, tutor IA que cita OACI, AFAC y FAA, exámenes de práctica'],
+    ];
+    return `<div class="procab" data-grupo-titulo><h1>La app AIrborne Academy</h1>
+      <p>Todo lo demás vive en la app para iPhone y Android, donde tu suscripción y nuestro contenido están protegidos.</p>
+      <ul class="applista">${lista.map(([t, d]) => `<li><b>${t}:</b> ${d}</li>`).join('')}</ul>
+      <p><a class="boton oro" href="../#descargar">Descargar la app</a></p></div>`;
+  }
+  // Rescate de la bitácora: quien la usó en la web durante la beta puede descargar sus vuelos (sus datos son suyos)
+  function rescateBitacora() {
+    let l = []; try { l = JSON.parse(localStorage.getItem('air_bitacora') || '[]'); } catch (e) { l = []; }
+    if (!Array.isArray(l) || !l.length) return '';
+    return `<div class="card aviso-card"><h2>Tus vuelos de la bitácora siguen aquí</h2>
+      <p>En este navegador tienes ${l.length} ${l.length === 1 ? 'vuelo guardado' : 'vuelos guardados'}. La bitácora ahora vive en la app; descarga tus registros para no perderlos.</p>
+      <p><button type="button" class="boton oro" data-rescate="csv">Descargar CSV (Excel)</button> <button type="button" class="boton" data-rescate="json">Descargar copia completa (JSON)</button></p></div>`;
+  }
+  function activarRescate() {
+    document.querySelectorAll('[data-rescate]').forEach((b) => b.addEventListener('click', () => {
+      let l = []; try { l = JSON.parse(localStorage.getItem('air_bitacora') || '[]'); } catch (e) { return; }
+      let texto, tipo, ext;
+      if (b.dataset.rescate === 'json') { texto = JSON.stringify(l, null, 2); tipo = 'application/json'; ext = 'json'; }
+      else {
+        // CSV con todas las columnas que existan, separado por ";" y con BOM para que Excel respete los acentos
+        const cols = [...new Set(l.flatMap((v) => Object.keys(v)))];
+        const celda = (x) => `"${String(x ?? '').replace(/"/g, '""')}"`;
+        texto = '\ufeff' + [cols.map(celda).join(';'), ...l.map((v) => cols.map((c) => celda(v[c])).join(';'))].join('\r\n');
+        tipo = 'text/csv'; ext = 'csv';
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([texto], { type: tipo }));
+      a.download = `bitacora_airborne_${new Date().toISOString().slice(0, 10)}.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }));
   }
   // Buscador: filtra las fichas sin recargar
   function activarBuscador() {
@@ -398,12 +441,12 @@
       $('#sinResultados').hidden = total > 0;
     });
   }
-  // Invitación a Pro (solo se usa cuando CANDADO_PRO = true)
+  // Invitación a la app (en la web, cuando alguien abre una herramienta Pro)
   function invitacionPro(titulo) {
     $('#btnBack').hidden = false;
-    return `<section class="calc guia"><h1>${titulo}</h1><div class="card procard"><h2>Parte de AIrborne Pro</h2>
-      <p>Esta herramienta es parte de la suscripción. Las herramientas gratis (METAR y TAF, plan de vuelo y conversiones) siguen libres para todos.</p>
-      <p><a class="boton oro" href="../index.html#precios">Ver la suscripción</a> <a class="boton" href="#/">Volver al inicio</a></p></div></section>`;
+    return `<section class="calc guia"><h1>${titulo}</h1><div class="card procard"><h2>Disponible en la app AIrborne Academy</h2>
+      <p>Esta herramienta vive en la app para iPhone y Android. En la web siguen libres para todos METAR y TAF, el plan de vuelo y las conversiones.</p>
+      <p><a class="boton oro" href="../#descargar">Descargar la app</a> <a class="boton" href="#/">Ver las herramientas gratis</a></p></div></section>`;
   }
 
   function pantalla(h) {
@@ -464,7 +507,7 @@
       window.scrollTo(0, 0);
       return;
     }
-    if (!h) { vista.innerHTML = inicio(); activarBuscador(); document.title = 'AIrborne Academy · Herramientas'; return; }
+    if (!h) { vista.innerHTML = inicio(); activarBuscador(); activarRescate(); document.title = 'AIrborne Academy · Herramientas'; return; }
     vista.innerHTML = pantalla(h);
     document.title = h.titulo + ' · AIrborne Academy';
     $('#form').addEventListener('input', () => recalcular(h));
