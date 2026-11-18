@@ -9,7 +9,7 @@
  *  - Las consultas de METAR/TAF en vivo (?ids=) nunca se guardan: siempre van a internet.
  *  - Para publicar una versión nueva, cambia VERSION y los teléfonos se actualizan solos.
  */
-const VERSION = 'airborne-herramientas-v8';
+const VERSION = 'airborne-herramientas-v9';
 const ARCHIVOS = [
   './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './pesobalance.js', './bitacora.js', './ingles.js', './meteo.js', './esperas.html', './manifest.webmanifest',
   './icono-180.png', './icono-192.png', './icono-512.png', './icono-maskable-512.png',

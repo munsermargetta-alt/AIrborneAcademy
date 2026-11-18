@@ -1,5 +1,0 @@
-# wrangler.toml — configuración del intermediario de METAR/TAF en Cloudflare Workers.
-# name: el nombre del Worker; su dirección será https://airborne-meteo.<tu-subdominio>.workers.dev
-name = "airborne-meteo"
-main = "worker.js"
-compatibility_date = "2026-11-01"

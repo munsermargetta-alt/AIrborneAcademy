@@ -1,0 +1,5 @@
+# netlify.toml — proyecto "airborne-meteo": solo el intermediario de METAR y TAF.
+# La página de AIrborne Academy NO vive aquí (está en GitHub Pages).
+[build]
+  publish = "public"
+  functions = "netlify/functions"

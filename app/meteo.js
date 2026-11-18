@@ -10,7 +10,7 @@
  *      - edadMin(): cuántos minutos tiene el reporte.
  *   2. DATOS REALES: aviationweather.gov (NOAA) NO deja que una página web lea sus datos
  *      directamente (no permite CORS). Por eso la app los pide a un intermediario nuestro
- *      (servicios/meteo-worker), que los trae, los guarda 5 minutos y nos los devuelve.
+ *      (servicios/meteo-netlify, una función en Netlify), que los trae, los guarda 5 minutos y nos los devuelve.
  *      Mientras ese intermediario no esté activo, la app abre el dato oficial en otra pestaña
  *      para copiarlo y pegarlo.
  *   3. PANTALLA.
@@ -352,17 +352,17 @@
   if (typeof window === 'undefined') return;
 
   /* ======================= 2. DATOS REALES ======================= */
-  // Dirección del intermediario (Cloudflare Worker). Vacía = aún no activado.
-  // Para probarlo antes de publicarlo: en la consola del navegador
-  //   localStorage.setItem('air_meteo_servicio', 'https://…workers.dev')
-  const SERVICIO_PUBLICADO = '';
+  // Dirección del intermediario (función de Netlify, proyecto "airborne-meteo"; código en servicios/meteo-netlify).
+  // Para probar otra dirección sin publicar: en la consola del navegador
+  //   localStorage.setItem('air_meteo_servicio', 'https://…/meteo')
+  const SERVICIO_PUBLICADO = 'https://airborne-meteo.netlify.app/meteo';
   const servicio = () => { try { return localStorage.getItem('air_meteo_servicio') || SERVICIO_PUBLICADO; } catch (e) { return SERVICIO_PUBLICADO; } };
   async function traer(id) {
     const base = servicio();
     if (!base) { const e = new Error('sin-servicio'); e.codigo = 'sin-servicio'; throw e; }
     const ctl = new AbortController(); const reloj = setTimeout(() => ctl.abort(), 12000);
     try {
-      const r = await fetch(`${base.replace(/\/$/, '')}/?ids=${encodeURIComponent(id)}`, { signal: ctl.signal, cache: 'no-store' });
+      const r = await fetch(`${base.replace(/\/$/, '')}?ids=${encodeURIComponent(id)}`, { signal: ctl.signal, cache: 'no-store' });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'El servicio respondió con error ' + r.status);
       return j;                         // { fuente, obtenido, estaciones: [{ id, nombre, metar, taf }] }
