@@ -4,11 +4,13 @@
  *  - Al instalarse, descarga la lista ARCHIVOS y la guarda en una caché con nombre VERSION.
  *  - Cada vez que la app pide un archivo, primero intenta internet (para tener lo más nuevo);
  *    si no hay señal, usa la copia guardada.
+ *  - El formato AFAC (1.4 MB) y pdf-lib (0.5 MB) NO se descargan al instalar, para no gastar datos:
+ *    se guardan la primera vez que alguien descarga un plan de vuelo, y desde ahí funcionan sin internet.
  *  - Para publicar una versión nueva, cambia VERSION y los teléfonos se actualizan solos.
  */
-const VERSION = 'airborne-herramientas-v3';
+const VERSION = 'airborne-herramientas-v4';
 const ARCHIVOS = [
-  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './esperas.html', './manifest.webmanifest',
+  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './esperas.html', './manifest.webmanifest',
   './icono-180.png', './icono-192.png', './icono-512.png', './icono-maskable-512.png',
   '../img/logo.png', '../img/favicon-32.png',
 ];

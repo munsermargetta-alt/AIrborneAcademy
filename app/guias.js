@@ -186,11 +186,41 @@
     ['19', 'chalecos', 'J/ Chalecos', 'L con luz, F fluoresceína, U o V con radio. Vacío si no llevas.'],
     ['19', 'botes', 'D/ Botes', 'Número, capacidad total, si tienen cubierta (C) y su color. Vacío si no llevas.'],
     ['19', 'color', 'A/ Color y marcas', 'Colores del avión y marcas notables.'],
+    ['19', 'n19', 'N/ Observaciones', 'Datos extra para búsqueda y salvamento (distinto de RMK/). Vacío si no hay: en el formato se tacha la N.'],
     ['19', 'piloto', 'C/ Piloto al mando', 'Nombre del piloto al mando.'],
+    ['19', 'licencia', 'No. de licencia (formato AFAC)', 'Lo pide el formato de la AFAC junto al nombre. No va en el mensaje FPL. Se guarda solo en tu dispositivo.'],
   ];
   const GUARDA = 'air_fpl';
   const leer = () => { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch (e) { return null; } };
   const guardar = (d) => { try { localStorage.setItem(GUARDA, JSON.stringify(d)); } catch (e) { /* sin almacenamiento */ } };
+
+  // Carga pdf-lib solo cuando hace falta (pesa ~500 KB) y queda en caché para usarse sin internet
+  let cargaPDFLib = null;
+  const cargarPDFLib = () => cargaPDFLib || (cargaPDFLib = new Promise((ok, mal) => {
+    if (window.PDFLib) return ok(window.PDFLib);
+    const sc = document.createElement('script'); sc.src = 'vendor/pdf-lib.min.js';
+    sc.onload = () => ok(window.PDFLib); sc.onerror = () => { cargaPDFLib = null; mal(new Error('No se pudo cargar pdf-lib')); };
+    document.head.appendChild(sc);
+  }));
+  async function descargarAFAC(d, r) {
+    const estado = $('#estadoAFAC');
+    try {
+      estado.textContent = 'Preparando el PDF…';
+      const [PDFLib, plantilla] = await Promise.all([cargarPDFLib(), fetch('plan_vuelo_afac.pdf').then((x) => { if (!x.ok) throw new Error('plantilla'); return x.arrayBuffer(); })]);
+      const sen = (window.AIrRutasSENEAM || {})[(d.salida || '').toUpperCase()];
+      const out = await window.AIrAFAC.llenarAFAC(PDFLib, plantilla, { ...d, casilla18: r.c18, destinatarios: sen ? sen.d : [] });
+      const url = URL.createObjectURL(new Blob([out.bytes], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `plan_de_vuelo_${(d.c7 || 'AFAC').toUpperCase()}_${d.dof || ''}.pdf`.replace(/_\.pdf$/, '.pdf');
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      estado.textContent = (out.rutaLarga || out.otrosLargo)
+        ? 'Listo, pero la ruta o la casilla 18 no cupieron completas en los renglones del formato: revisa el PDF.'
+        : 'Listo: se descargó el formato AFAC lleno. Revísalo antes de imprimirlo.';
+    } catch (e) {
+      estado.textContent = 'No se pudo generar el PDF. Si estás sin internet, abre esta pantalla una vez con conexión para que se guarde.';
+    }
+  }
 
   const plan = {
     titulo: 'Plan de vuelo OACI',
@@ -211,6 +241,7 @@
           <form class="card" id="formPlan" onsubmit="return false">${campos}</form>
           <div class="card res" aria-live="polite"><h2>Mensaje FPL</h2><div id="salidaPlan"></div></div>
         </div>
+        <div class="card" style="margin-top:16px"><h2>Rutas y destinatarios publicados por SENEAM</h2><div id="rutasSENEAM"></div></div>
         <h2 style="margin-top:22px">Reglas que más se olvidan</h2>
         <ul>
           <li>La <b>hora</b> siempre va en <b>UTC</b>. En el centro de México, suma 6 horas a la hora local.</li>
@@ -221,7 +252,7 @@
           <li>La casilla 19 no se transmite en el mensaje: se queda en la oficina ATS para búsqueda y salvamento.</li>
         </ul>
         <div class="aviso">El ejemplo IFR es ilustrativo: la ruta (DCT) y la altitud no son una ruta real. En un vuelo real, la ruta y los niveles salen del PIA (AIP) de México. Revisa también ENR 1.10 del PIA y lo que pida SENEAM para presentar tu plan.</div>
-        <p class="fuente">[OACI] PANS-ATM, Doc 4444, Apéndice 2, con la enmienda 1 (formato vigente desde el 15 de noviembre de 2012).</p>
+        <p class="fuente">[OACI] PANS-ATM, Doc 4444, Apéndice 2, con la enmienda 1 (formato vigente desde el 15 de noviembre de 2012). [MX-AFAC] Formato de plan de vuelo F-1-1407 y "Manual de apoyo con rutas para el FPL" de SENEAM, ambos publicados en gob.mx.</p>
       </section>`;
     },
     activar() {
@@ -234,15 +265,42 @@
         const tabla = (titulo, filas) => (filas.length ? `<h3>${titulo}</h3><table class="codigos">${filas.map(([c, t]) => `<tr><td><code>${esc(c)}</code></td><td>${esc(t)}</td></tr>`).join('')}</table>` : '');
         $('#salidaPlan').innerHTML = `
           <pre class="msg" id="msgFPL">${esc(r.mensaje)}</pre>
-          <button type="button" class="boton" id="btnCopiar">Copiar mensaje</button>
+          <div class="ejemplos"><button type="button" class="boton" id="btnCopiar">Copiar mensaje</button>
+          <button type="button" class="boton oro" id="btnAFAC" ${r.errores.length ? 'disabled' : ''}>Descargar formato AFAC (PDF)</button></div>
+          ${r.errores.length ? '<p class="nota">Para descargar el formato AFAC, primero corrige los errores.</p>' : '<p class="nota">Sale el formato oficial de la AFAC ya lleno, listo para imprimir y firmar. Domicilio y firma van a mano; prioridad, destinatarios, remitente y hora de depósito los pone la oficina ATS.</p>'}
+          <p class="nota" id="estadoAFAC" aria-live="polite"></p>
           ${r.errores.length ? `<div class="error"><b>Por corregir:</b><ul>${r.errores.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>` : '<div class="ok">Sin errores de formato.</div>'}
           ${r.avisos.map((a) => `<div class="aviso">${esc(a)}</div>`).join('')}
           <h3>Casilla 19 (se queda en la oficina ATS)</h3><pre class="msg">${esc(r.item19 || '—')}</pre>
           ${tabla('Tu equipo (10a)', r.equipo)}${tabla('Tu vigilancia (10b)', r.vigilancia)}${tabla('Tus especificaciones PBN', r.pbnLista)}`;
+        $('#btnAFAC').addEventListener('click', () => descargarAFAC(d, r));
         $('#btnCopiar').addEventListener('click', async () => {
           try { await navigator.clipboard.writeText(r.mensaje); $('#btnCopiar').textContent = 'Copiado'; } catch (e) { $('#btnCopiar').textContent = 'No se pudo copiar'; }
         });
       };
+      // Panel de rutas del manual de SENEAM para el aeródromo de salida que escribiste
+      const pintarRutas = () => {
+        const cod = form.querySelector('[data-id="salida"]').value.toUpperCase();
+        const tabla = window.AIrRutasSENEAM || {};
+        const a = tabla[cod];
+        const caja = $('#rutasSENEAM');
+        if (!a) {
+          caja.innerHTML = `<p>${cod ? `<b>${esc(cod)}</b> no aparece en el manual.` : 'Escribe el aeródromo de salida.'} El manual trae ${Object.keys(tabla).length} aeródromos; algunos grandes (como MMMX, MMGL o MMTO) no vienen en él.</p>
+            <details><summary>Ver los aeródromos incluidos</summary><p class="nota">${Object.entries(tabla).map(([k, v]) => `<b>${k}</b> ${esc(v.l)}`).join(' · ')}</p></details>`;
+          return;
+        }
+        caja.innerHTML = `<p><b>${esc(cod)}</b> · ${esc(a.n)} (${esc(a.l)})</p>
+          <p class="nota">Destinatarios AFTN (se ponen en el formato AFAC al descargarlo): <code>${a.d.map(esc).join(' ')}</code></p>
+          <p>Rutas de salida publicadas (VOR, aerovía y primer punto). Toca una para ponerla al inicio de tu ruta:</p>
+          <div class="chips">${a.r.map((x) => `<button type="button" class="chip" data-ruta="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+          <div class="aviso">El manual es de 2012: algunas aerovías y puntos pudieron cambiar (México ha ido pasando a rutas RNAV). Antes de volar, confirma la ruta en el PIA (AIP) vigente y con la oficina ATS.</div>`;
+        caja.querySelectorAll('[data-ruta]').forEach((b) => b.addEventListener('click', () => {
+          const i = form.querySelector('[data-id="ruta"]');
+          i.value = b.dataset.ruta; pintar(); i.focus();
+        }));
+      };
+      form.addEventListener('input', (e) => { if (e.target.dataset.id === 'salida') pintarRutas(); });
+      document.querySelectorAll('[data-ejemplo]').forEach((b) => b.addEventListener('click', pintarRutas));
       form.addEventListener('input', (e) => { const i = e.target; const p = i.selectionStart; i.value = i.value.toUpperCase(); try { i.setSelectionRange(p, p); } catch (x) { /* nada */ } pintar(); });
       document.querySelectorAll('[data-ejemplo]').forEach((b) => b.addEventListener('click', () => {
         const e = F.EJEMPLOS[b.dataset.ejemplo].datos;
@@ -250,6 +308,7 @@
         pintar();
       }));
       pintar();
+      pintarRutas();
     },
   };
 

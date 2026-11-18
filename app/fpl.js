@@ -84,7 +84,7 @@ const separarPBN = (txt) => (txt || '').toUpperCase().replace(/\s/g, '').match(/
 /*
  * d = { c7, reglas, tipo, numero, aeronave, estela, c10a, c10b, salida, hora, velocidad, nivel, ruta,
  *       destino, eet, alterno1, alterno2, pbn, nav, com, dat, sur, dof, reg, opr, per, rmk,
- *       autonomia, personas, radio, supervivencia, chalecos, botes, color, piloto }
+ *       autonomia, personas, radio, supervivencia, chalecos, botes, color, n19, piloto, licencia }
  * Regresa { mensaje, item19, errores: [...], avisos: [...], equipo: [...], vigilancia: [...], pbnLista: [...] }
  */
 function armarFPL(d) {
@@ -168,12 +168,13 @@ function armarFPL(d) {
   if (M(d.chalecos)) s19.push('J/' + M(d.chalecos).replace(/[^LFUV]/g, ''));
   if (M(d.botes)) s19.push('D/' + M(d.botes));
   if (M(d.color)) s19.push('A/' + M(d.color));
+  if (M(d.n19)) s19.push('N/' + M(d.n19));
   if (M(d.piloto)) s19.push('C/' + M(d.piloto)); else errores.push('Casilla 19: escribe el nombre del piloto al mando (C/).');
 
   // El mensaje, con un guion antes de cada casilla
   const mensaje = `(FPL-${c7}-${M(d.reglas)}${M(d.tipo)}\n-${numero}${tipoAv}/${M(d.estela)}-${eq.join('')}/${vig.join('')}\n-${salida}${hora}\n-${vel}${niv} ${ruta}\n-${destino}${eet}${alternos.length ? ' ' + alternos.join(' ') : ''}\n-${c18.length ? c18.join(' ') : '0'})`;
   return {
-    mensaje, item19: s19.join(' '), errores, avisos,
+    mensaje, item19: s19.join(' '), c18: c18.length ? c18.join(' ') : '0', errores, avisos,
     equipo: eq.map((c) => [c, CODIGOS.c10a[c] || '¿?']), vigilancia: vig.map((c) => [c, CODIGOS.c10b[c] || '¿?']),
     pbnLista: pbn.map((c) => [c, CODIGOS.pbn[c] ? CODIGOS.pbn[c].t : '¿?']),
   };

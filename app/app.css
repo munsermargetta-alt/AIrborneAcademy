@@ -100,3 +100,9 @@ pre.msg{white-space:pre-wrap;word-break:break-word;background:var(--navy);color:
 ol.pasos{padding-left:20px;margin:14px 0}
 ol.pasos li{margin-bottom:8px}
 @media (prefers-color-scheme:dark){ .ok{background:#0f2e1f;color:#8fe0b3} }
+.boton.oro{background:var(--gold);color:var(--navy)}
+.boton[disabled]{opacity:.45;cursor:not-allowed}
+.nota{font-size:14px;color:var(--muted);margin:6px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 10px;font:600 14px ui-monospace,Consolas,monospace;cursor:pointer}
+.chip:hover{border-color:var(--gold)}
