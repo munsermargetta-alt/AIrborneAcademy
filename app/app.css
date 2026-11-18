@@ -117,3 +117,30 @@ ol.pasos li{margin-bottom:8px}
 .chip.malo{border-color:#dc2626;background:#fde8e8;color:#b91c1c}
 .ej{margin:12px 0}
 @media (prefers-color-scheme:dark){.w.ok{background:#0f2e1f;color:#8fe0b3}.w.falta{background:#3a1212;color:#fca5a5}.w.cambio{background:#3a2a0d;color:#fcd34d}}
+/* inicio: grupos Gratis / Pro y buscador */
+[hidden]{display:none!important}
+.buscador{position:relative;margin-top:14px;max-width:560px}
+.buscador input{padding-left:44px;border-radius:999px}
+.buscador .ico-b{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted)}
+.buscador .ico-b svg{width:20px;height:20px}
+.grupo{margin:22px 0 0}
+.grupocab{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 10px}
+.grupocab h2{font-size:19px}
+.grupocab p{flex-basis:100%;margin:0;color:var(--muted);font-size:15px}
+.grupo.plan-gratis{background:linear-gradient(180deg,rgba(242,195,90,.14),rgba(242,195,90,.04));border:1px solid rgba(242,195,90,.55);border-radius:20px;padding:16px}
+.gratis-et{font:700 11px var(--body);letter-spacing:.12em;background:var(--ok);color:#fff;border-radius:999px;padding:3px 9px}
+.procab{margin:30px 0 0;padding:16px 18px;border-radius:18px;background:var(--navy);color:#e8edf6}
+.procab h1{font-size:22px;color:var(--gold)}
+.procab p{margin:6px 0 0;font-size:15px;color:#c9d3e6}
+.pro{display:inline-block;vertical-align:2px;font:700 10px var(--body);letter-spacing:.12em;color:var(--navy);background:var(--gold);border-radius:6px;padding:2px 6px;margin-left:4px}
+.procard{max-width:620px;border-color:var(--gold)}
+/* METAR / TAF */
+.met{margin-bottom:12px}
+.metcab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.metcab h2{font-size:18px;display:flex;align-items:center;gap:8px}
+.cat{font:700 12px var(--body);letter-spacing:.08em;color:#fff;border-radius:6px;padding:3px 8px}
+table.codigos td:first-child{white-space:nowrap;width:1%}
+table.codigos tr.malo td{background:rgba(220,38,38,.08)}
+table.codigos tr.malo td:first-child code{color:var(--bad);font-weight:700}
+table.codigos tr.gris td{color:var(--muted)}
+table.codigos i[lang=en]{color:var(--muted);font-size:14px}

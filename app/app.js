@@ -33,6 +33,8 @@
     pyb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v16M5 20h14M4 9h16"/><path d="M4 9l-2 5h4zM20 9l-2 5h4z"/></svg>',
     bitacora: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>',
     ingles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    meteo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 11.2 3.5 3.5 0 0 0 7 18z"/><path d="M9 21l1-2M13 21l1-2"/></svg>',
+    buscar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
     plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
   };
 
@@ -318,14 +320,90 @@
   const leer = (id) => { try { return JSON.parse(localStorage.getItem('air_' + id) || 'null'); } catch (e) { return null; } };
 
   /* ---------- 3. Pantallas ---------- */
+
+  /*
+   * CATÁLOGO: cómo se acomoda el inicio. Cada sección es un grupo que el alumno reconoce
+   * por lo que está haciendo (planear, volar IFR, preparar su licencia), no por cómo está programado.
+   *  - plan 'gratis': siempre libre para todos.
+   *  - plan 'pro': parte de la suscripción AIrborne Pro.
+   * "claves" son palabras extra para el buscador (sinónimos que un alumno escribiría).
+   */
+  const CATALOGO = [
+    { plan: 'gratis', titulo: 'Herramientas gratis', sub: 'Libres para todos, siempre.', items: [
+      { id: 'meteo', claves: 'metar taf clima tiempo meteorologia pronostico aeropuerto viento visibilidad nubes' },
+      { id: 'plan', claves: 'plan de vuelo fpl afac formato casilla niveles crucero rutas seneam pia' },
+      { id: 'conv', claves: 'convertir unidades nudos km pies metros galones litros libras kilos hpa inhg' },
+    ] },
+    { plan: 'pro', titulo: 'Planeación y performance', sub: 'Antes de despegar: navegación, combustible y peso.', items: [
+      { id: 'viento', claves: 'deriva rumbo gs corrección wca' },
+      { id: 'tiempo', claves: 'combustible distancia ete consumo' },
+      { id: 'altitud', claves: 'densidad presion tas isa toluca' },
+      { id: 'pista', claves: 'cruzado crosswind componente aterrizaje' },
+      { id: 'perfil', claves: 'toc tod descenso ascenso' },
+      { id: 'pyb', claves: 'peso balance cg centro de gravedad cessna 172 piper pa28 envolvente' },
+    ] },
+    { plan: 'pro', titulo: 'Vuelo por instrumentos', sub: 'Salidas, arcos, esperas y navegación de área.', items: [
+      { id: 'gradiente', claves: 'sid salida ft/nm porcentaje régimen' },
+      { id: 'arco', claves: 'dme arco vor radial' },
+      { id: 'espera', href: 'esperas.html', titulo: 'Esperas y acrónimos', resumen: 'Entrada directa, gota o paralela, práctica y acrónimos de cabina.', claves: 'holding espera patrón entrada gota paralela acrónimos' },
+      { id: 'pbn', claves: 'rnav rnp vnav gnss lnav' },
+    ] },
+    { plan: 'pro', titulo: 'Licencia y carrera', sub: 'Tu inglés, tus horas y tus derechos como alumno.', items: [
+      { id: 'ingles', claves: 'rtari ingles nivel 6 pronunciación colación fraseología icao english' },
+      { id: 'bitacora', claves: 'horas bitácora logbook calzo a calzo hobbs escuela cobro' },
+    ] },
+  ];
+  // Cuando exista el cobro (cuentas y suscripciones), poner en true: las herramientas Pro
+  // mostrarán la invitación a suscribirse. OJO: en una página estática esto es un "candado de cortesía";
+  // el candado real lo pone el servidor entregando los módulos Pro solo a suscriptores.
+  const CANDADO_PRO = false;
+  const GRATIS = new Set(CATALOGO.filter((g) => g.plan === 'gratis').flatMap((g) => g.items.map((x) => x.id)));
+
+  // Título y resumen de cada ficha: de la lista de calculadoras, de las guías o del propio catálogo
+  function ficha(x) {
+    const h = HERRAMIENTAS.find((y) => y.id === x.id), g = window.AIrGuias && window.AIrGuias[x.id];
+    const titulo = x.titulo || (h && h.titulo) || (g && g.titulo), resumen = x.resumen || (h && h.resumen) || (g && g.resumen);
+    return titulo ? { ...x, titulo, resumen, href: x.href || '#/' + x.id } : null;
+  }
+  const sinAcentos = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   function inicio() {
     $('#btnBack').hidden = true;
-    const tiles = HERRAMIENTAS.map((h) => `<a class="tile" href="#/${h.id}"><span class="ico">${ICO[h.id]}</span><span><h2>${h.titulo}</h2><p>${h.resumen}</p></span></a>`).join('')
-      + `<a class="tile" href="esperas.html"><span class="ico">${ICO.espera}</span><span><h2>Esperas y acrónimos</h2><p>Entrada directa, gota o paralela, práctica y acrónimos de cabina.</p></span></a>`;
-    // Guías de estudio (guias.js): no calculan, explican, y la del plan de vuelo arma el mensaje
-    const guias = Object.entries(window.AIrGuias || {}).map(([id, g]) => `<a class="tile" href="#/${id}"><span class="ico">${ICO[id]}</span><span><h2>${g.titulo}</h2><p>${g.resumen}</p></span></a>`).join('');
-    return `<section class="hola"><h1>Herramientas de vuelo</h1><p>Calcula paso a paso. Funcionan sin internet una vez abiertas.</p></section><div class="grid">${tiles}</div>
-      ${guias ? `<section class="hola" style="margin-top:26px"><h1>Guías de estudio</h1><p>Explicadas claro, con fuentes OACI, AFAC y FAA.</p></section><div class="grid">${guias}</div>` : ''}`;
+    const tile = (f, plan) => `<a class="tile" href="${f.href}" data-buscar="${sinAcentos(f.titulo + ' ' + f.resumen + ' ' + (f.claves || ''))}">
+        <span class="ico">${ICO[f.id] || ''}</span><span><h2>${f.titulo}${plan === 'gratis' ? '' : ' <span class="pro">PRO</span>'}</h2><p>${f.resumen}</p></span></a>`;
+    const secciones = CATALOGO.map((g) => {
+      const fichas = g.items.map(ficha).filter(Boolean);
+      return `<section class="grupo plan-${g.plan}" data-grupo><div class="grupocab"><h2>${g.titulo}</h2>${g.plan === 'gratis' ? '<span class="gratis-et">GRATIS</span>' : ''}<p>${g.sub}</p></div>
+        <div class="grid">${fichas.map((f) => tile(f, g.plan)).join('')}</div></section>`;
+    });
+    // Las secciones Pro van bajo un encabezado propio, para que se entienda qué es gratis y qué no
+    const iPro = CATALOGO.findIndex((g) => g.plan === 'pro');
+    secciones.splice(iPro, 0, `<div class="procab" data-grupo-titulo><h1>AIrborne Pro</h1><p>${CANDADO_PRO ? 'Todo lo de abajo es parte de la suscripción.' : '<b>Acceso anticipado:</b> durante la beta todo está abierto. Las herramientas marcadas <span class="pro">PRO</span> serán parte de la suscripción.'}</p></div>`);
+    return `<section class="hola"><h1>Herramientas de vuelo</h1><p>Encuentra lo que necesitas o búscalo. Funcionan sin internet una vez abiertas (menos la consulta de METAR y TAF en vivo).</p>
+      <div class="buscador"><span class="ico-b">${ICO.buscar}</span><input id="buscar" type="search" placeholder="Buscar: METAR, viento cruzado, bitácora…" autocomplete="off" aria-label="Buscar herramienta"></div></section>
+      ${secciones.join('')}<p class="nota" id="sinResultados" hidden>No encontré nada con esa palabra. Prueba con otra, por ejemplo "combustible" o "espera".</p>`;
+  }
+  // Buscador: filtra las fichas sin recargar
+  function activarBuscador() {
+    const caja = $('#buscar'); if (!caja) return;
+    caja.addEventListener('input', () => {
+      const q = sinAcentos(caja.value.trim()).split(/\s+/).filter(Boolean);
+      let total = 0;
+      document.querySelectorAll('[data-grupo]').forEach((sec) => {
+        let n = 0;
+        sec.querySelectorAll('.tile').forEach((t) => { const ve = q.every((w) => t.dataset.buscar.includes(w)); t.hidden = !ve; if (ve) n++; });
+        sec.hidden = n === 0; total += n;
+      });
+      const tit = $('[data-grupo-titulo]'); if (tit) tit.hidden = q.length > 0;
+      $('#sinResultados').hidden = total > 0;
+    });
+  }
+  // Invitación a Pro (solo se usa cuando CANDADO_PRO = true)
+  function invitacionPro(titulo) {
+    $('#btnBack').hidden = false;
+    return `<section class="calc guia"><h1>${titulo}</h1><div class="card procard"><h2>Parte de AIrborne Pro</h2>
+      <p>Esta herramienta es parte de la suscripción. Las herramientas gratis (METAR y TAF, plan de vuelo y conversiones) siguen libres para todos.</p>
+      <p><a class="boton oro" href="../index.html#precios">Ver la suscripción</a> <a class="boton" href="#/">Volver al inicio</a></p></div></section>`;
   }
 
   function pantalla(h) {
@@ -374,6 +452,8 @@
     const h = HERRAMIENTAS.find((x) => x.id === id);
     const vista = $('#vista');
     const guia = window.AIrGuias && window.AIrGuias[id];
+    // Candado Pro (apagado durante la beta)
+    if (CANDADO_PRO && id && !GRATIS.has(id) && (h || guia)) { vista.innerHTML = invitacionPro((h || guia).titulo); window.scrollTo(0, 0); return; }
     if (guia) {
       // Pantalla de guía: la dibuja guias.js y conecta sus propios botones
       $('#btnBack').hidden = false;
@@ -384,7 +464,7 @@
       window.scrollTo(0, 0);
       return;
     }
-    if (!h) { vista.innerHTML = inicio(); document.title = 'AIrborne Academy · Herramientas'; return; }
+    if (!h) { vista.innerHTML = inicio(); activarBuscador(); document.title = 'AIrborne Academy · Herramientas'; return; }
     vista.innerHTML = pantalla(h);
     document.title = h.titulo + ' · AIrborne Academy';
     $('#form').addEventListener('input', () => recalcular(h));

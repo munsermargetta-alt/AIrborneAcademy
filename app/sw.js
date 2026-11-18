@@ -6,11 +6,12 @@
  *    si no hay señal, usa la copia guardada.
  *  - El formato AFAC (1.4 MB) y pdf-lib (0.5 MB) NO se descargan al instalar, para no gastar datos:
  *    se guardan la primera vez que alguien descarga un plan de vuelo, y desde ahí funcionan sin internet.
+ *  - Las consultas de METAR/TAF en vivo (?ids=) nunca se guardan: siempre van a internet.
  *  - Para publicar una versión nueva, cambia VERSION y los teléfonos se actualizan solos.
  */
-const VERSION = 'airborne-herramientas-v7';
+const VERSION = 'airborne-herramientas-v8';
 const ARCHIVOS = [
-  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './pesobalance.js', './bitacora.js', './ingles.js', './esperas.html', './manifest.webmanifest',
+  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './pesobalance.js', './bitacora.js', './ingles.js', './meteo.js', './esperas.html', './manifest.webmanifest',
   './icono-180.png', './icono-192.png', './icono-512.png', './icono-maskable-512.png',
   '../img/logo.png', '../img/favicon-32.png',
 ];
@@ -26,6 +27,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  // Los METAR/TAF en vivo NO se guardan: un reporte viejo servido sin internet sería engañoso
+  if (new URL(e.request.url).searchParams.has('ids')) return;
   e.respondWith(
     fetch(e.request)
       .then((r) => {
