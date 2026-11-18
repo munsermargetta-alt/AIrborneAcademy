@@ -8,9 +8,9 @@
  *    se guardan la primera vez que alguien descarga un plan de vuelo, y desde ahí funcionan sin internet.
  *  - Para publicar una versión nueva, cambia VERSION y los teléfonos se actualizan solos.
  */
-const VERSION = 'airborne-herramientas-v5';
+const VERSION = 'airborne-herramientas-v6';
 const ARCHIVOS = [
-  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './esperas.html', './manifest.webmanifest',
+  './', './index.html', './app.css', './app.js', './calc.js', './fpl.js', './guias.js', './afac_pdf.js', './rutas_seneam.js', './pesobalance.js', './bitacora.js', './esperas.html', './manifest.webmanifest',
   './icono-180.png', './icono-192.png', './icono-512.png', './icono-maskable-512.png',
   '../img/logo.png', '../img/favicon-32.png',
 ];

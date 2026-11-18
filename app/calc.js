@@ -292,9 +292,93 @@ function nivelesCrucero({ derrota, reglas = 'IFR', pais = 'MX', minimo = 3000 })
   return { derrota: d, este, TA, TL, lista };
 }
 
+/* 11) PESO Y BALANCE (aviones ligeros)
+ * Momento = peso × brazo.  CG = suma de momentos ÷ peso total.
+ * Se revisa en tres momentos: peso cero combustible (ZFW), despegue y aterrizaje.
+ * La envolvente se da como polígono [brazo, peso] (en pulgadas y libras), como en el POH.
+ * Brazos y límites: tomados del POH de cada modelo (ver PERFILES_PYB). El peso vacío y su brazo
+ * SIEMPRE salen del registro de peso y balance de TU avión (cambian con cada equipo instalado).
+ */
+const LB_GAL_AVGAS = 6.0;
+const PERFILES_PYB = {
+  C172S: {
+    nombre: 'Cessna 172S Skyhawk SP', fuente: 'POH Cessna 172S, sección 6',
+    pesoMaxDespegue: 2550, pesoMaxRampa: 2558, pesoMaxAterrizaje: 2550, combustibleUtilGal: 53, rodajeGal: 1.4,
+    estaciones: [
+      { id: 'frente', nombre: 'Piloto y copiloto', brazo: 37.0 },
+      { id: 'atras', nombre: 'Asientos traseros', brazo: 73.0 },
+      { id: 'equipaje1', nombre: 'Equipaje área 1', brazo: 95.0, max: 120 },
+      { id: 'equipaje2', nombre: 'Equipaje área 2', brazo: 123.0, max: 50 },
+    ],
+    brazoCombustible: 48.0,
+    notaEquipaje: 'Área 1 + área 2: máximo 120 lb juntas.', equipajeConjuntoMax: 120,
+    // categoría normal: límite delantero 35.0 in hasta 1,950 lb, sube en línea recta a 41.0 in en 2,550 lb; trasero 47.3 in
+    envolvente: [[35.0, 1500], [35.0, 1950], [41.0, 2550], [47.3, 2550], [47.3, 1500]],
+  },
+  PA28_161: {
+    nombre: 'Piper PA-28-161 Warrior II', fuente: 'POH Piper PA-28-161 Warrior II, sección 6; TCDS 2A13',
+    pesoMaxDespegue: 2325, pesoMaxRampa: 2332, pesoMaxAterrizaje: 2325, combustibleUtilGal: 48, rodajeGal: 1.2,
+    estaciones: [
+      { id: 'frente', nombre: 'Piloto y copiloto', brazo: 80.5 },
+      { id: 'atras', nombre: 'Asientos traseros', brazo: 118.1 },
+      { id: 'equipaje1', nombre: 'Equipaje', brazo: 142.8, max: 200 },
+    ],
+    brazoCombustible: 95.0,
+    // categoría normal: delantero 83.0 in hasta 1,950 lb, sube a 87.0 in en 2,325 lb; trasero 93.0 in
+    envolvente: [[83.0, 1400], [83.0, 1950], [87.0, 2325], [93.0, 2325], [93.0, 1400]],
+  },
+};
+
+// ¿El punto (brazo, peso) está dentro del polígono? (método del rayo)
+function dentroEnvolvente(pol, x, y) {
+  let dentro = false;
+  for (let i = 0, j = pol.length - 1; i < pol.length; j = i++) {
+    const [xi, yi] = pol[i], [xj, yj] = pol[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) dentro = !dentro;
+  }
+  // los bordes cuentan como dentro (el límite es "hasta")
+  for (let i = 0, j = pol.length - 1; i < pol.length; j = i++) {
+    const [xi, yi] = pol[i], [xj, yj] = pol[j];
+    const cruz = (x - xi) * (yj - yi) - (y - yi) * (xj - xi);
+    if (Math.abs(cruz) < 1e-6 && x >= Math.min(xi, xj) - 1e-9 && x <= Math.max(xi, xj) + 1e-9 && y >= Math.min(yi, yj) - 1e-9 && y <= Math.max(yi, yj) + 1e-9) return true;
+  }
+  return dentro;
+}
+
+function pesoBalance(perfil, { pesoVacio, brazoVacio, cargas = {}, combustibleGal = 0, consumoGal = 0 }) {
+  const p = perfil;
+  const filas = [{ nombre: 'Peso vacío básico', peso: pesoVacio, brazo: brazoVacio }];
+  p.estaciones.forEach((e) => { const w = Number(cargas[e.id]) || 0; filas.push({ nombre: e.nombre, peso: w, brazo: e.brazo }); });
+  const suma = (fs) => fs.reduce((a, f) => ({ peso: a.peso + f.peso, momento: a.momento + f.peso * f.brazo }), { peso: 0, momento: 0 });
+  const zfw = suma(filas);
+  const lbComb = combustibleGal * LB_GAL_AVGAS;
+  const lbRodaje = Math.min(p.rodajeGal, combustibleGal) * LB_GAL_AVGAS;
+  const lbConsumo = consumoGal * LB_GAL_AVGAS;
+  const rampa = { peso: zfw.peso + lbComb, momento: zfw.momento + lbComb * p.brazoCombustible };
+  const despegue = { peso: rampa.peso - lbRodaje, momento: rampa.momento - lbRodaje * p.brazoCombustible };
+  const aterrizaje = { peso: despegue.peso - lbConsumo, momento: despegue.momento - lbConsumo * p.brazoCombustible };
+  const cg = (x) => (x.peso > 0 ? x.momento / x.peso : 0);
+  const punto = (x, max) => ({ peso: x.peso, momento: x.momento, cg: cg(x), dentro: dentroEnvolvente(p.envolvente, cg(x), x.peso) && (!max || x.peso <= max + 1e-9) });
+  const avisos = [];
+  if (combustibleGal > p.combustibleUtilGal) avisos.push(`Más combustible que el utilizable (${p.combustibleUtilGal} gal).`);
+  if (consumoGal + p.rodajeGal > combustibleGal) avisos.push('El consumo del vuelo es mayor que el combustible cargado.');
+  p.estaciones.forEach((e) => { if (e.max && (Number(cargas[e.id]) || 0) > e.max) avisos.push(`${e.nombre}: máximo ${e.max} lb.`); });
+  if (p.equipajeConjuntoMax) {
+    const eq = p.estaciones.filter((e) => e.id.startsWith('equipaje')).reduce((a, e) => a + (Number(cargas[e.id]) || 0), 0);
+    if (eq > p.equipajeConjuntoMax) avisos.push(p.notaEquipaje);
+  }
+  const res = {
+    filas, lbComb, lbRodaje, lbConsumo,
+    zfw: punto(zfw), rampa: { ...punto(rampa), dentroPeso: rampa.peso <= p.pesoMaxRampa },
+    despegue: punto(despegue, p.pesoMaxDespegue), aterrizaje: punto(aterrizaje, p.pesoMaxAterrizaje), avisos,
+  };
+  res.ok = res.zfw.dentro && res.despegue.dentro && res.aterrizaje.dentro && res.rampa.dentroPeso && !avisos.length;
+  return res;
+}
+
 const AIrCalc = { norm360, norm180, trianguloViento, tiempoDistancia, altitudes, componentesViento,
   perfil, gradienteARegimen, regimenAGradiente, porcientoAFtNm, ftNmAPorciento, ftNmAGrados, conv, entradaEspera,
-  radioViraje, arcoDME, nivelesCrucero };
+  radioViraje, arcoDME, nivelesCrucero, PERFILES_PYB, pesoBalance, dentroEnvolvente };
 
 if (typeof module !== 'undefined') module.exports = AIrCalc;   // para las pruebas en Node
 if (typeof window !== 'undefined') window.AIrCalc = AIrCalc;    // para la app en el navegador

@@ -123,5 +123,21 @@ igual('EUA VFR 359° desde 15,000 (nada de 18,500: clase A)', txt(nc), '16,500 f
 nc = C.nivelesCrucero({ derrota: 200, reglas: 'IFR', pais: 'US', minimo: 15000 });
 igual('EUA IFR 200° desde 15,000', txt(nc), '16,000 ft FL180 FL200 FL220 FL240 FL260 FL280 FL300 FL320 FL340 FL360 FL380 FL400');
 
+// Peso y balance — ejemplo C172S (mismo que guías de estudio): vacío 1,680 lb @ 38.4; frente 380; 35 gal; equipaje 1: 40 lb
+let pb = C.pesoBalance(C.PERFILES_PYB.C172S, { pesoVacio: 1680, brazoVacio: 38.4, cargas: { frente: 380, equipaje1: 40 }, combustibleGal: 35, consumoGal: 10 });
+cerca('C172S: peso rampa', pb.rampa.peso, 2310, 0.01);
+cerca('C172S: CG rampa (92,452 ÷ 2,310)', pb.rampa.cg, 40.023, 0.001);
+cerca('C172S: peso despegue (−1.4 gal rodaje)', pb.despegue.peso, 2301.6, 0.01);
+igual('C172S: dentro de límites', pb.ok, true);
+// límite delantero a 2,550 lb es 41.0: CG 40.0 con 2,550 lb debe quedar FUERA
+igual('C172S: 2,550 lb con CG 40.0 fuera', C.dentroEnvolvente(C.PERFILES_PYB.C172S.envolvente, 40.0, 2550), false);
+igual('C172S: 2,250 lb con CG 38.0 dentro (límite 38.0)', C.dentroEnvolvente(C.PERFILES_PYB.C172S.envolvente, 38.0, 2250), true);
+pb = C.pesoBalance(C.PERFILES_PYB.C172S, { pesoVacio: 1680, brazoVacio: 38.4, cargas: { frente: 400, atras: 340, equipaje1: 60 }, combustibleGal: 40, consumoGal: 10 });
+igual('C172S sobrepeso: fuera', pb.ok, false);
+// PA-28-161: vacío 1,485.5 @ 85.04; frente 340; 30 gal
+pb = C.pesoBalance(C.PERFILES_PYB.PA28_161, { pesoVacio: 1485.5, brazoVacio: 85.04, cargas: { frente: 340 }, combustibleGal: 30, consumoGal: 8 });
+cerca('PA-28: peso despegue', pb.despegue.peso, 1485.5 + 340 + 180 - 7.2, 0.01);
+igual('PA-28: dentro', pb.ok, true);
+
 console.log(`\n${ok} correctas, ${mal} con error`);
 process.exit(mal ? 1 : 0);

@@ -357,7 +357,8 @@
         $('#salidaPlan').innerHTML = `
           <pre class="msg" id="msgFPL">${esc(r.mensaje)}</pre>
           <div class="ejemplos"><button type="button" class="boton" id="btnCopiar">Copiar mensaje</button>
-          <button type="button" class="boton oro" id="btnAFAC" ${r.errores.length ? 'disabled' : ''}>Descargar formato AFAC (PDF)</button></div>
+          <button type="button" class="boton oro" id="btnAFAC" ${r.errores.length ? 'disabled' : ''}>Descargar formato AFAC (PDF)</button>
+          <button type="button" class="boton" id="btnRealizado" title="Solo cuando el vuelo sí se hizo">Ya volé: pasar a mi bitácora</button></div>
           ${r.errores.length ? '<p class="nota">Para descargar el formato AFAC, primero corrige los errores.</p>' : '<p class="nota">Sale el formato oficial de la AFAC ya lleno, listo para imprimir y firmar. Domicilio y firma van a mano; prioridad, destinatarios, remitente y hora de depósito los pone la oficina ATS.</p>'}
           <p class="nota" id="estadoAFAC" aria-live="polite"></p>
           ${r.errores.length ? `<div class="error"><b>Por corregir:</b><ul>${r.errores.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>` : '<div class="ok">Sin errores de formato.</div>'}
@@ -365,6 +366,12 @@
           <h3>Casilla 19 (se queda en la oficina ATS)</h3><pre class="msg">${esc(r.item19 || '—')}</pre>
           ${tabla('Tu equipo (10a)', r.equipo)}${tabla('Tu vigilancia (10b)', r.vigilancia)}${tabla('Tus especificaciones PBN', r.pbnLista)}`;
         $('#btnAFAC').addEventListener('click', () => descargarAFAC(d, r));
+        // Solo si el vuelo se realizó: lleva matrícula, avión, ruta y EET a la bitácora (las horas reales las captura el alumno)
+        $('#btnRealizado').addEventListener('click', () => {
+          const hoy = new Date(); const f = /^\d{6}$/.test(d.dof || '') ? `20${d.dof.slice(0, 2)}-${d.dof.slice(2, 4)}-${d.dof.slice(4, 6)}` : hoy.toISOString().slice(0, 10);
+          try { localStorage.setItem('air_bitacora_borrador', JSON.stringify({ fecha: f, matricula: (d.c7 || '').toUpperCase(), aeronave: (d.aeronave || '').toUpperCase(), origen: (d.salida || '').toUpperCase(), destino: (d.destino || '').toUpperCase(), eetPlan: d.eet || '' })); } catch (e) { /* nada */ }
+          location.hash = '#/bitacora';
+        });
         $('#btnCopiar').addEventListener('click', async () => {
           try { await navigator.clipboard.writeText(r.mensaje); $('#btnCopiar').textContent = 'Copiado'; } catch (e) { $('#btnCopiar').textContent = 'No se pudo copiar'; }
         });
