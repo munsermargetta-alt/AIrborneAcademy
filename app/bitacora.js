@@ -105,6 +105,16 @@
             <li>La Ley Federal de Protección al Consumidor obliga a todo proveedor a <b>informar y respetar</b> los precios, tarifas, cargos y condiciones con que ofreció el servicio (art. 7) y a mostrar el <b>monto total</b> (art. 7 Bis). Si te vendieron «hora de vuelo» y te cobran tiempo que no es de vuelo, o te cobran algo distinto de lo pactado, puedes reclamar a la escuela por escrito y, si no se arregla, presentar una queja ante <b>PROFECO</b>.</li>
             <li><b>Qué hacer:</b> pide por escrito cómo se mide la hora que pagas (calzo a calzo, Hobbs o tacómetro), anota tus horas en cada vuelo y conserva tus recibos. Esta bitácora te da la evidencia.</li>
             <li>La CO AV-08.4/07 de la AFAC establece el contenido del libro de bitácora del avión y de la bitácora de vuelo: tu registro aquí <b>no sustituye</b> tu bitácora oficial certificada.</li>
+                      <li><b>Lo que dice la circular de escuelas (CO LI-142.01/24 R2, 22 de septiembre de 2026):</b>
+              <ul>
+                <li>Tu <b>contrato</b> debe incluir los derechos y obligaciones de las partes, las causas de terminación, el tipo de curso y los <b>montos a pagar</b> (numeral 6.1).</li>
+                <li>El <b>reglamento interno</b> de la escuela debe tener un apartado de <b>pagos</b> y otro de <b>cancelaciones</b> (5.10 y 5.11). Pídelo.</li>
+                <li>Al inscribirte te deben entregar: comprobante de inscripción, el <b>programa</b> (materias, horario, instructores asignados y bibliografía) y el reglamento interno (8.12).</li>
+                <li>La escuela no puede hacer publicidad engañosa sobre su permiso, planes o programas (9.3).</li>
+                <li>Las lecciones de maniobras fundamentales no pueden pasar de <b>120 minutos</b>, y no más de <b>dos sesiones en 24 horas</b>, con al menos 90 minutos de descanso entre ellas (11.8).</li>
+                <li>Solo instructores con permiso vigente de la AFAC pueden dar instrucción (9.6 y 11.1).</li>
+                <li>La circular <b>no dice cómo se cuentan ni se cobran las horas</b>, ni trae reembolsos o un procedimiento de quejas. Por eso, lo que vale es lo que diga tu contrato y el reglamento interno, y te protege la Ley Federal de Protección al Consumidor.</li>
+              </ul></li>
           </ul>
           <p class="nota">Esto es información para que conozcas tus derechos, no asesoría legal. Para un caso concreto, consulta a un abogado o a PROFECO.</p>
         </details>
@@ -118,7 +128,7 @@
             <p class="nota" id="bitEstado" aria-live="polite"></p></div>
         </div>
         <h2 style="margin-top:22px">Vuelos</h2><div id="bitLista"></div>
-        <p class="fuente">[MX] NOM-022-SCT3-2001, num. 2.20 (tiempo de vuelo); Ley Federal del Trabajo, art. 222; Ley Federal de Protección al Consumidor, arts. 7 y 7 Bis; [MX-AFAC] CO AV-08.4/07 (libro de bitácora y bitácora de vuelo). [OACI] Anexo 1: definición de tiempo de vuelo para aviones.</p>
+        <p class="fuente">[MX] NOM-022-SCT3-2001, num. 2.20 (tiempo de vuelo); Ley Federal del Trabajo, art. 222; Ley Federal de Protección al Consumidor, arts. 7 y 7 Bis; [MX-AFAC] CO AV-08.4/07 (libro de bitácora y bitácora de vuelo); CO LI-142.01/24 R2 (instituciones educativas, 22-sep-2026). [OACI] Anexo 1: definición de tiempo de vuelo para aviones.</p>
       </section>`;
     },
     activar() {

@@ -107,3 +107,13 @@ ol.pasos li{margin-bottom:8px}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 10px;font:600 14px ui-monospace,Consolas,monospace;cursor:pointer}
 .chip:hover{border-color:var(--gold)}
 .chip.activo{border-color:var(--gold);background:var(--gold);color:var(--navy)}
+/* inglés: resultado palabra por palabra */
+.palabras{line-height:2}
+.w{padding:2px 6px;border-radius:6px;margin:0 1px}
+.w.ok{background:#e6f4ec;color:#166534}
+.w.falta{background:#fde8e8;color:#b91c1c;font-weight:700}
+.w.cambio{background:#fdf1dc;color:#92400e;font-weight:700;cursor:help}
+.w.sobra{text-decoration:line-through;color:var(--muted)}
+.chip.malo{border-color:#dc2626;background:#fde8e8;color:#b91c1c}
+.ej{margin:12px 0}
+@media (prefers-color-scheme:dark){.w.ok{background:#0f2e1f;color:#8fe0b3}.w.falta{background:#3a1212;color:#fca5a5}.w.cambio{background:#3a2a0d;color:#fcd34d}}
