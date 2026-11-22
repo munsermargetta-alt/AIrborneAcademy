@@ -209,7 +209,11 @@
     if (quieto) return;
     tel.classList.add('vivo');
     // La primera vez salta la portada del video (3.4 s) para que el gancho sea la app misma
-    if (primera) { primera = false; try { mini.currentTime = 3.4; } catch (e) {} }
+    if (primera) {
+      primera = false;
+      var saltar = function () { try { mini.currentTime = 3.4; } catch (e) {} };
+      if (mini.readyState >= 1) saltar(); else mini.addEventListener('loadedmetadata', saltar, { once: true });
+    }
     var p = mini.play(); if (p && p.catch) p.catch(function () {});
   }
   function pausa() { tel.classList.remove('vivo'); mini.pause(); }
