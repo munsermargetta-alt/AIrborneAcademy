@@ -139,9 +139,27 @@
       </div>
       <ol class="steps">
         <li><h3>Empieza gratis</h3><p>Usa las herramientas de la web y mira cápsulas y Shorts en <a href="https://www.youtube.com/@AIrborne_Academy" target="_blank" rel="noopener">YouTube</a> y TikTok.</p></li>
-        <li><h3>Descarga la app</h3><p>Con la suscripción tienes todas las clases, el tutor de IA, los exámenes y las calculadoras.</p></li>
+        <li><h3>Descarga la app</h3><p>Con la suscripción tienes el simulador de examen, la frecuencia ATC en inglés, la hoja de carga y todas las herramientas Pro.</p></li>
         <li><h3>Llega listo a tu examen</h3><p>Repasa lo que te falta y practica hasta dominar cada materia.</p></li>
       </ol>
+
+      <!-- Demostración: miniatura que se reproduce sola al pasar el cursor (o al aparecer en pantalla en el celular)
+           y que al tocarla abre el video completo. Sin sonido en la miniatura, para no sorprender con audio. -->
+      <div class="demo">
+        <div class="demo-txt">
+          <span class="eyebrow">Mírala en acción</span>
+          <h3>La app real, en un minuto</h3>
+          <p>Plan de vuelo con formato AFAC, simulador de examen, frecuencia ATC, NOTAM, hoja de carga y tu ruta a la licencia.</p>
+          <button type="button" class="btn gold" data-abrir-demo>▶ Ver el recorrido</button>
+        </div>
+        <button type="button" class="demo-tel" data-abrir-demo aria-label="Ver el video de demostración de la app">
+          <video class="demo-mini" muted loop playsinline preload="none" poster="video/demo-app-poster.webp" aria-hidden="true">
+            <source src="video/demo-app.mp4" type="video/mp4">
+          </video>
+          <span class="demo-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span>
+          <span class="demo-pista" aria-hidden="true">Pasa el cursor</span>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -166,5 +184,54 @@
     <p>© 2026 AIrborne Academy</p>
   </div>
 </footer>
+
+<!-- Ventana del video completo (se abre desde la demostración) -->
+<dialog class="demo-ventana" id="demoVentana" aria-label="Video de demostración de AIrborne Academy">
+  <button type="button" class="demo-cerrar" data-cerrar-demo aria-label="Cerrar">×</button>
+  <video id="demoCompleto" controls playsinline preload="none" poster="video/demo-app-poster.webp">
+    <source src="video/demo-app.mp4" type="video/mp4">
+  </video>
+</dialog>
+<script>
+/* Demostración de la app:
+   - Computadora (hay cursor): la miniatura se reproduce al pasar el cursor y se pausa al quitarlo.
+   - Celular (no hay cursor): se reproduce sola cuando la miniatura está a la vista y se pausa al salir.
+   - Si la persona pidió "reducir movimiento" en su sistema, no se reproduce sola: solo al abrirla.
+   - Al tocar o hacer clic, se abre el video completo con controles. Esc o la × lo cierran. */
+(function () {
+  var mini = document.querySelector('.demo-mini'), tel = document.querySelector('.demo-tel');
+  var ventana = document.getElementById('demoVentana'), completo = document.getElementById('demoCompleto');
+  if (!mini || !tel || !ventana) return;
+  var quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var conCursor = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var primera = true;
+  function play() {
+    if (quieto) return;
+    tel.classList.add('vivo');
+    // La primera vez salta la portada del video (3.4 s) para que el gancho sea la app misma
+    if (primera) { primera = false; try { mini.currentTime = 3.4; } catch (e) {} }
+    var p = mini.play(); if (p && p.catch) p.catch(function () {});
+  }
+  function pausa() { tel.classList.remove('vivo'); mini.pause(); }
+  if (conCursor) {
+    tel.addEventListener('mouseenter', play);
+    tel.addEventListener('mouseleave', pausa);
+    tel.addEventListener('focus', play);
+    tel.addEventListener('blur', pausa);
+  } else if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { es.forEach(function (e) { e.isIntersecting ? play() : pausa(); }); }, { threshold: 0.6 }).observe(tel);
+  }
+  function abrir() {
+    pausa();
+    if (typeof ventana.showModal === 'function') ventana.showModal(); else ventana.setAttribute('open', '');
+    completo.currentTime = 0; var p = completo.play(); if (p && p.catch) p.catch(function () {});
+  }
+  function cerrar() { completo.pause(); if (typeof ventana.close === 'function') ventana.close(); else ventana.removeAttribute('open'); }
+  document.querySelectorAll('[data-abrir-demo]').forEach(function (b) { b.addEventListener('click', abrir); });
+  document.querySelectorAll('[data-cerrar-demo]').forEach(function (b) { b.addEventListener('click', cerrar); });
+  ventana.addEventListener('click', function (e) { if (e.target === ventana) cerrar(); });   // clic fuera del video
+  ventana.addEventListener('close', function () { completo.pause(); });                   // Esc
+})();
+</script>
 </body>
 </html>

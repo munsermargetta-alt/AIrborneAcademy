@@ -125,3 +125,33 @@ footer img{height:38px;width:auto}
 .plan-muestra{margin:0}
 .plan-muestra img{display:block;width:100%;height:auto;border-radius:14px;background:#fff;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.45);transform:rotate(-1.2deg)}
 .plan-muestra figcaption{margin-top:12px;font-size:14px;color:#9fb0cf;text-align:center}
+
+/* Demostración en video (sección "Cómo funciona") */
+.demo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:center;margin-top:56px;padding:40px;border-radius:24px;
+  background:linear-gradient(135deg,#0b1630 0%,#1b2f63 100%);color:#fff;overflow:hidden;position:relative}
+.demo::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(242,195,90,.22),transparent 65%);pointer-events:none}
+.demo-txt{display:grid;gap:14px;max-width:460px;position:relative;z-index:1}
+.demo-txt h3{font-size:clamp(26px,3.4vw,36px)}
+.demo-txt p{color:#c7d0e2}
+.demo-txt .btn{justify-self:start;border:0;cursor:pointer;font:inherit;font-weight:700}
+.demo-tel{position:relative;z-index:1;width:250px;aspect-ratio:9/16;padding:9px;border:0;border-radius:36px;cursor:pointer;
+  background:#0e1422;box-shadow:0 0 0 2px #46526e,0 30px 70px rgba(0,0,0,.5);transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s}
+.demo-tel video{width:100%;height:100%;object-fit:cover;border-radius:28px;display:block;background:#0b1630}
+.demo-play{position:absolute;inset:0;margin:auto;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;color:#0b1630;
+  background:var(--gold);box-shadow:0 0 0 0 rgba(242,195,90,.6);animation:latido 2.2s infinite;transition:opacity .3s,transform .3s}
+.demo-play svg{width:34px;height:34px;margin-left:4px}
+.demo-pista{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font:600 13px var(--body);letter-spacing:.04em;white-space:nowrap;
+  background:rgba(11,22,48,.78);color:#fff;padding:6px 12px;border-radius:99px;transition:opacity .3s}
+@media (hover:none){.demo-pista{display:none}}
+.demo-tel.vivo{transform:translateY(-6px) scale(1.04) rotate(-1deg);box-shadow:0 0 0 2px var(--gold),0 40px 90px rgba(0,0,0,.6),0 0 60px rgba(242,195,90,.25)}
+.demo-tel.vivo .demo-play{opacity:0;transform:scale(.6)}
+.demo-tel.vivo .demo-pista{opacity:0}
+.demo-tel:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+@keyframes latido{0%{box-shadow:0 0 0 0 rgba(242,195,90,.55)}70%{box-shadow:0 0 0 18px rgba(242,195,90,0)}100%{box-shadow:0 0 0 0 rgba(242,195,90,0)}}
+@media (prefers-reduced-motion:reduce){.demo-play{animation:none}.demo-tel{transition:none}}
+@media (max-width:760px){.demo{grid-template-columns:minmax(0,1fr);padding:28px 22px;gap:28px;justify-items:center;text-align:center}.demo-txt .btn{justify-self:center}.demo-tel{width:min(260px,72vw)}}
+.demo-ventana{padding:0;border:0;background:transparent;max-width:none;max-height:none;overflow:visible}
+.demo-ventana::backdrop{background:rgba(5,10,22,.86);backdrop-filter:blur(4px)}
+.demo-ventana video{display:block;height:min(88vh,960px);width:auto;max-width:94vw;border-radius:22px;background:#000;box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.demo-cerrar{position:absolute;top:-16px;right:-16px;width:44px;height:44px;border-radius:50%;border:0;background:var(--gold);color:#0b1630;font:700 26px/1 var(--display);cursor:pointer;z-index:2}
+@media (max-width:760px){.demo-cerrar{top:8px;right:8px}}
