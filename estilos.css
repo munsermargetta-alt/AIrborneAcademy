@@ -111,3 +111,17 @@ footer img{height:38px;width:auto}
 .steps a{color:var(--gold)}
 @media (max-width:760px){.descarga{grid-template-columns:minmax(0,1fr)}.qr{display:none}.solo-movil{display:inline-flex}}
 .steps li{color:#fff}
+
+/* Destacado del plan de vuelo OACI */
+#plan-de-vuelo{background:linear-gradient(160deg,var(--navy) 0%,#15295a 100%)}
+.plan-dest{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:44px;align-items:center}
+@media (max-width:900px){.plan-dest{grid-template-columns:minmax(0,1fr)}}
+.plan-dest h2{font-size:clamp(28px,4vw,40px);margin:10px 0 12px;color:#fff}
+.plan-dest .txt>p{color:#c7d0e2;font-size:18px}
+.ventajas{list-style:none;padding:0;margin:18px 0 26px;display:grid;gap:12px}
+.ventajas li{position:relative;padding-left:30px;color:#c7d0e2;font-size:17px;line-height:1.45}
+.ventajas li::before{content:"";position:absolute;left:0;top:7px;width:16px;height:16px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(242,195,90,.18)}
+.ventajas b{color:#fff}
+.plan-muestra{margin:0}
+.plan-muestra img{display:block;width:100%;height:auto;border-radius:14px;background:#fff;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.45);transform:rotate(-1.2deg)}
+.plan-muestra figcaption{margin-top:12px;font-size:14px;color:#9fb0cf;text-align:center}
