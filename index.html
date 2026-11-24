@@ -21,6 +21,7 @@
   <div class="wrap">
     <a href="/" aria-label="AIrborne Academy, inicio"><img src="img/logo.png" alt="AIrborne Academy"></a>
     <nav aria-label="Secciones">
+      <a href="#acceso-anticipado">Acceso anticipado</a>
       <a href="#licencias">Licencias</a>
       <a href="#incluye">Qué incluye</a>
       <a href="#como">Cómo funciona</a>
@@ -43,6 +44,35 @@
           <a class="btn line" href="app/">Herramientas gratis</a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Acceso anticipado: lista de espera. El 24 de diciembre ("Feliz Navidad, aviadores") se escribe
+       a esta lista primero; el 28 se abre la beta a todos. El correo se guarda en nuestro servidor
+       (airborne-pagos → /api/lista-espera), que limita intentos y no guarda la IP. -->
+  <section id="acceso-anticipado" class="anticipado" aria-labelledby="anticipado-titulo">
+    <div class="wrap anticipado-grid">
+      <div class="anticipado-txt">
+        <span class="eyebrow">Beta abierta · gratis</span>
+        <h2 id="anticipado-titulo">Feliz Navidad, aviadores</h2>
+        <p>Sé de los primeros en despegar. El <b>24 de diciembre</b> te enviamos tu acceso anticipado; el 28 se abre para todos. La beta es gratis y con todo incluido hasta el 31 de enero.</p>
+        <ol class="cuenta" aria-label="Tiempo para el acceso anticipado" data-meta="2026-12-24T06:00:00Z">
+          <li><b data-u="d">--</b><span>días</span></li>
+          <li><b data-u="h">--</b><span>horas</span></li>
+          <li><b data-u="m">--</b><span>min</span></li>
+        </ol>
+      </div>
+      <form class="espera" id="formEspera" novalidate>
+        <label for="correoEspera">Tu correo</label>
+        <div class="espera-fila">
+          <input id="correoEspera" name="correo" type="email" inputmode="email" autocomplete="email" placeholder="piloto@correo.com" required maxlength="254">
+          <button class="btn gold" type="submit">Quiero mi acceso</button>
+        </div>
+        <!-- Campo trampa para robots: invisible para las personas -->
+        <div class="trampa" aria-hidden="true"><label for="empresaEspera">Empresa</label><input id="empresaEspera" name="empresa" tabindex="-1" autocomplete="off"></div>
+        <label class="acepto"><input type="checkbox" id="aceptoEspera" required><span>Acepto el <a href="privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a>. Solo usaremos tu correo para la beta y el lanzamiento.</span></label>
+        <p class="espera-msg" id="msgEspera" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 
@@ -120,7 +150,7 @@
       <div class="txt">
         <span class="eyebrow">La app</span>
         <h2>Lleva tu escuela en el bolsillo</h2>
-        <p>Clases, tutor IA, exámenes de práctica, computadores de vuelo, inglés RTARI y tu bitácora, en la app para iPhone y Android.</p>
+        <p>Clases, simulador de examen, computadores de vuelo, inglés RTARI, NOTAM, plan de vuelo y tu bitácora, en la app para iPhone y Android.</p>
         <p class="pronto">Muy pronto en Google Play y App Store.</p>
         <a class="btn gold solo-movil" href="descargar/">Descargar la app</a>
       </div>
@@ -235,6 +265,61 @@
   document.querySelectorAll('[data-cerrar-demo]').forEach(function (b) { b.addEventListener('click', cerrar); });
   ventana.addEventListener('click', function (e) { if (e.target === ventana) cerrar(); });   // clic fuera del video
   ventana.addEventListener('close', function () { completo.pause(); });                   // Esc
+})();
+</script>
+<script>
+/* Acceso anticipado: cuenta regresiva y lista de espera.
+   - La cuenta llega a cero el 24 de diciembre a las 00:00 de la Ciudad de México (06:00 UTC).
+   - Después del 24 el texto cambia; desde el 28 (beta abierta) el formulario invita a entrar a la app.
+   - El correo va a nuestro servidor; la respuesta es la misma aunque ya estuvieras registrado. */
+(() => {
+  const API = 'https://airborne-pagos.netlify.app/api/lista-espera';
+  const ABIERTA = Date.parse('2026-12-28T06:00:00Z');
+  const cuenta = document.querySelector('.cuenta');
+  const meta = Date.parse(cuenta.dataset.meta);
+  const pon = (u, v) => { cuenta.querySelector(`[data-u="${u}"]`).textContent = String(v).padStart(2, '0'); };
+  const sec = document.getElementById('acceso-anticipado');
+
+  function tic() {
+    const ahora = Date.now();
+    if (ahora >= ABIERTA) {               // Beta abierta: ya no hay lista, se entra directo
+      sec.querySelector('h2').textContent = 'La beta ya despegó';
+      sec.querySelector('.anticipado-txt p').innerHTML = 'Gratis y con todo incluido hasta el 31 de enero. Entra, estudia y cuéntanos qué te parece.';
+      cuenta.hidden = true;
+      document.getElementById('formEspera').outerHTML = '<a class="btn gold" href="app/">Entrar a la beta</a>';
+      return clearInterval(reloj);
+    }
+    const falta = Math.max(0, meta - ahora);
+    if (!falta) {                          // Del 24 al 27: acceso anticipado en curso
+      sec.querySelector('.anticipado-txt p').innerHTML = 'El acceso anticipado ya empezó. Déjanos tu correo y te enviamos tu invitación; el 28 se abre para todos.';
+      cuenta.hidden = true;
+      return;
+    }
+    pon('d', Math.floor(falta / 864e5)); pon('h', Math.floor(falta / 36e5) % 24); pon('m', Math.floor(falta / 6e4) % 60);
+  }
+  const reloj = setInterval(tic, 30000); tic();
+
+  const form = document.getElementById('formEspera');
+  const msg = document.getElementById('msgEspera');
+  form && form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const correo = form.correo.value.trim();
+    const acepto = document.getElementById('aceptoEspera').checked;
+    msg.className = 'espera-msg';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) { msg.textContent = 'Revisa tu correo: parece que le falta algo.'; msg.classList.add('error'); return; }
+    if (!acepto) { msg.textContent = 'Para registrarte, acepta el aviso de privacidad.'; msg.classList.add('error'); return; }
+    const boton = form.querySelector('button'); boton.disabled = true; msg.textContent = 'Enviando…';
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo, consentimiento: true, empresa: form.empresa.value }) });
+      const d = await r.json().catch(() => ({}));
+      msg.textContent = d.mensaje || (r.ok ? '¡Listo!' : 'No pudimos registrarte. Intenta de nuevo.');
+      msg.classList.add(r.ok ? 'ok' : 'error');
+      if (r.ok) form.reset();
+    } catch (err) {
+      msg.textContent = 'Sin conexión con el servidor. Intenta de nuevo en un momento.'; msg.classList.add('error');
+    } finally { boton.disabled = false; }
+  });
 })();
 </script>
 </body>
